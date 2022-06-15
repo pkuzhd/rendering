@@ -27,6 +27,10 @@ add_executable(point
         point.cpp
         glad.c
         )
+add_executable(blend
+        blend.cpp
+        glad.c
+        )
 
 target_link_libraries(
         rendering
@@ -42,6 +46,19 @@ target_link_libraries(
 )
 target_link_libraries(
         point
+        Boost::filesystem
+        Boost::system
+        Boost::program_options
+        Boost::timer
+        Boost::chrono
+        glfw
+        OpenGL::OpenGL
+        OpenGL::EGL
+        ${OPENCV_COMPONENTS}
+)
+
+target_link_libraries(
+        blend
         Boost::filesystem
         Boost::system
         Boost::program_options
