@@ -157,9 +157,10 @@ int main() {
     // ------------------------------------
     Shader ourShader("/home/zhd/CLionProjects/rendering/shaders/point.vert",
                      "/home/zhd/CLionProjects/rendering/shaders/point.frag");
-    Shader screen("/home/zhd/CLionProjects/rendering/shaders/screen.vert",
-                  "/home/zhd/CLionProjects/rendering/shaders/screen.frag");
-
+    Shader updateProgram("/home/zhd/CLionProjects/rendering/shaders/update.vert",
+                         "/home/zhd/CLionProjects/rendering/shaders/update.frag");
+    Shader resolveProgram("/home/zhd/CLionProjects/rendering/shaders/resolve.vert",
+                          "/home/zhd/CLionProjects/rendering/shaders/resolve.frag");
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     int num_tri = 857132 * 2;
@@ -246,8 +247,8 @@ int main() {
     // -------------------------------------------------------------------------------------------
     ourShader.use();
 
-    screen.use();
-    screen.setInt("sampler", 0);
+    updateProgram.use();
+    updateProgram.setInt("sampler", 0);
 
     GLuint vertexArray;
     glGenVertexArrays(1, &vertexArray);
@@ -335,7 +336,30 @@ int main() {
                 glDrawArrays(GL_TRIANGLES, 6 * 688200, 6 * 168932);
         }
 
-        //
+        // accumulateFBO
+        glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
+
+        glDisable(GL_DEPTH_TEST);
+
+        glPolygonMode(GL_FRONT_AND_BACK, show_type);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+
+//        glDisable(GL_DEPTH_TEST);
+//        glEnable(GL_BLEND);
+//        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE);
+//        glClearColor(0, 0, 0, 0);
+//        glClear(GL_COLOR_BUFFER_BIT);
+//        glEnable(GL_FRAMEBUFFER_SRGB);
+
+        updateProgram.use();
+
+        glBindVertexArray(screenVAO);
+        glBindTexture(GL_TEXTURE_2D, cameraTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        // screen
         glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
         glDisable(GL_DEPTH_TEST);
@@ -344,10 +368,10 @@ int main() {
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        screen.use();
+        resolveProgram.use();
 
         glBindVertexArray(screenVAO);
-        glBindTexture(GL_TEXTURE_2D, cameraTexture);
+        glBindTexture(GL_TEXTURE_2D, accumulateTexture);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
 
