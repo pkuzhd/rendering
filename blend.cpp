@@ -136,7 +136,7 @@ int main() {
         glTexImage2D(
                 GL_TEXTURE_2D,
                 0, // level
-                GL_RGBA16,
+                GL_RGBA32F,
                 SCR_WIDTH,
                 SCR_HEIGHT,
                 0, // border must be 0
@@ -155,8 +155,8 @@ int main() {
 
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader ourShader("/home/zhd/CLionProjects/rendering/shaders/point.vert",
-                     "/home/zhd/CLionProjects/rendering/shaders/point.frag");
+    Shader ourShader("/home/zhd/CLionProjects/rendering/shaders/blend.vert",
+                     "/home/zhd/CLionProjects/rendering/shaders/blend.frag");
     Shader updateProgram("/home/zhd/CLionProjects/rendering/shaders/update.vert",
                          "/home/zhd/CLionProjects/rendering/shaders/update.frag");
     Shader resolveProgram("/home/zhd/CLionProjects/rendering/shaders/resolve.vert",
@@ -302,78 +302,56 @@ int main() {
         float angle = 0;
         model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 
-        // ->cameraFBO
-        glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO);
 
-        glEnable(GL_DEPTH_TEST);
-        glDisable(GL_BLEND);
-
-        glPolygonMode(GL_FRONT_AND_BACK, show_type);
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // bind textures on corresponding texture units
-
+        int tris[] = {0, 176124, 348068, 520032, 688200, 857132};
         // activate shader
         ourShader.use();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
         ourShader.setMat4("model", model);
 
-        // render boxes
-        glBindVertexArray(VAO);
-        {
-//            glDrawArrays(GL_TRIANGLES, 0, 3 * num_tri);
-            if (cam_select[0])
-                glDrawArrays(GL_TRIANGLES, 0, 6 * 176124);
-            if (cam_select[1])
-                glDrawArrays(GL_TRIANGLES, 6 * 176124, 6 * 171944);
-            if (cam_select[2])
-                glDrawArrays(GL_TRIANGLES, 6 * 348068, 6 * 171964);
-            if (cam_select[3])
-                glDrawArrays(GL_TRIANGLES, 6 * 520032, 6 * 168168);
-            if (cam_select[4])
-                glDrawArrays(GL_TRIANGLES, 6 * 688200, 6 * 168932);
-        }
-
-        // accumulateFBO
+        // clearAccumulation
         glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
-
-        glDisable(GL_DEPTH_TEST);
-
-        glPolygonMode(GL_FRONT_AND_BACK, show_type);
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClearColor(0, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT);
-
-
-//        glDisable(GL_DEPTH_TEST);
-//        glEnable(GL_BLEND);
-//        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE);
-//        glClearColor(0, 0, 0, 0);
-//        glClear(GL_COLOR_BUFFER_BIT);
 //        glEnable(GL_FRAMEBUFFER_SRGB);
 
-        updateProgram.use();
+        for (int i = 0; i < 5; ++i) {
+            // clearSubframe
+            glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO);
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBindVertexArray(screenVAO);
-        glBindTexture(GL_TEXTURE_2D, cameraTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+            // renderSubframe
+            ourShader.use();
+            glPolygonMode(GL_FRONT_AND_BACK, show_type);
+            glBindVertexArray(VAO);
+            glEnable(GL_DEPTH_TEST);
+            if (cam_select[i])
+                glDrawArrays(GL_TRIANGLES, 6 * tris[i], 6 * (tris[i + 1] - tris[i]));
+            glDisable(GL_DEPTH_TEST);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-        // screen
-        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+            // updateAccumulation
+            updateProgram.use();
+            glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
+            glEnable(GL_BLEND);
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE);
 
-        glDisable(GL_DEPTH_TEST);
+            glBindVertexArray(screenVAO);
+            glBindTexture(GL_TEXTURE_2D, cameraTexture);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        glPolygonMode(GL_FRONT_AND_BACK, show_type);
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+            glDisable(GL_BLEND);
+        }
 
+        // resolveAccumulation
         resolveProgram.use();
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
         glBindVertexArray(screenVAO);
         glBindTexture(GL_TEXTURE_2D, accumulateTexture);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
