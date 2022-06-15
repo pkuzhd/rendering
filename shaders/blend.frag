@@ -7,9 +7,10 @@ in float depth;
 uniform float width;
 uniform float height;
 
+in float weight;
 
 void main()
 {
-    FragColor = vec4(TexCoord.xyz, 1.0);
+    FragColor = vec4(TexCoord.xyz, weight);
 }
 

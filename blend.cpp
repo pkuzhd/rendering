@@ -51,12 +51,32 @@ float h = 640.0f;
 
 int cam_select[5] = {1, 1, 1, 1, 1};
 
+glm::vec3 centers[5] = {
+        {-0.260775,            -0.208567,            0.013085},
+        {-0.13337931097454817, -0.09792640328405332, 0.011925746660820238},
+        {0,                    0,                    0},
+        {0.13273071141398268,  -0.07897766327585604, -0.030115580768282482},
+        {0.26841132121195244,  -0.16857177340133145, -0.05398189913034572},
+};
+
+float centers_f[5][3] = {
+        {-0.260775,            -0.208567,            0.013085},
+        {-0.13337931097454817, -0.09792640328405332, 0.011925746660820238},
+        {0,                    0,                    0},
+        {0.13273071141398268,  -0.07897766327585604, -0.030115580768282482},
+        {0.26841132121195244,  -0.16857177340133145, -0.05398189913034572},
+};
+
 void key_callback(GLFWwindow *window, const int key, const int s, const int action, const int mods) {
     if (action == GLFW_RELEASE)
         return;
     if (action == GLFW_PRESS) {
         if (key >= GLFW_KEY_1 && key <= GLFW_KEY_5)
             cam_select[key - GLFW_KEY_1] = 1 - cam_select[key - GLFW_KEY_1];
+        if (key >= GLFW_KEY_6 && key <= GLFW_KEY_9)
+            camera.Position = centers[key - GLFW_KEY_6];
+        if (key == GLFW_KEY_0)
+            camera.Position = centers[4];
     }
 }
 
@@ -309,6 +329,7 @@ int main() {
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
         ourShader.setMat4("model", model);
+        glUniform3fv(glGetUniformLocation(ourShader.ID, "centers"), 5, reinterpret_cast<const GLfloat *>(centers_f));
 
         // clearAccumulation
         glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
@@ -324,6 +345,8 @@ int main() {
 
             // renderSubframe
             ourShader.use();
+            ourShader.setVec3("center", centers[i]);
+            ourShader.setInt("idx", i);
             glPolygonMode(GL_FRONT_AND_BACK, show_type);
             glBindVertexArray(VAO);
             glEnable(GL_DEPTH_TEST);
