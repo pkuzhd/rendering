@@ -21,25 +21,29 @@ out float weight;
 void main()
 {
     vec4 Xw = model * vec4(aPos.x, -aPos.y, -aPos.z, 1.0f);
-    vec4 Xc = view * Xw;
-    gl_Position = projection * Xc;
+    vec4 Xv = view * Xw;
+    gl_Position = projection * Xv;
     depth = -(view * model * vec4(aPos.x, -aPos.y, -aPos.z, 1.0f)).z;
-    vec3 OV = Xc.xyz;
-    vec3 OC = Xw.xyz - center;
-    float angle = degrees(acos(dot(OV, OC) / length(OV) / length(OC)));
+    vec3 OV = Xv.xyz;
+    vec3 OC = (view * vec4(Xw.xyz - center, 0.0f)).xyz;
+    float angle = degrees(acos(max(-1.0f, min(1.0f, dot(OV, OC) / length(OV) / length(OC)))));
     weight = 180 - angle;
     weight = 180;
     float angles[5];
+    float max_angle = 0.0f;
     for (int i = 0; i < 5; ++i) {
-        if (i == idx)
-            continue;
-        OC = Xw.xyz - centers[i];
-        angles[i] = degrees(acos(dot(OV, OC) / length(OV) / length(OC)));
-        if (angles[i] < angle) {
-            weight = 0.0;
-            break;
-        }
+//        if (i == idx)
+//            continue;
+        OC = (view * vec4(Xw.xyz - centers[i], 0.0f)).xyz;
+        angles[i] = degrees(acos(max(-1.0f, min(1.0f, dot(OV, OC) / length(OV) / length(OC)))));
+        max_angle = max(max_angle, angles[i]);
+//        if (angles[i] < angle) {
+//            weight = 0.0;
+//            break;
+//        }
     }
+    weight = 1 - angle / max_angle;
+//    weight = 1;
     TexCoord = aTexCoord;
 }
 

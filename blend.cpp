@@ -409,6 +409,10 @@ void processInput(GLFWwindow *window) {
         camera.ProcessKeyboard(LEFT, deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime * speed);
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+        camera.ProcessKeyboard(UP, deltaTime * speed);
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+        camera.ProcessKeyboard(DOWN, deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
         camera.Position = glm::vec3(0.0f, 0.0f, 0.0f);
 
