@@ -34,7 +34,7 @@ const unsigned int SCR_HEIGHT = 900;
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 0.0f),
               glm::vec3(0.0f, 1.0f, 0.0f),
-              YAW, PITCH);
+              YAW - 12, PITCH + 2);
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -51,16 +51,37 @@ float h = 640.0f;
 
 int cam_select[5] = {1, 1, 1, 1, 1};
 
+glm::vec3 centers[5] = {
+        {-0.260775,            -0.208567,            0.013085},
+        {-0.13337931097454817, -0.09792640328405332, 0.011925746660820238},
+        {0,                    0,                    0},
+        {0.13273071141398268,  -0.07897766327585604, -0.030115580768282482},
+        {0.26841132121195244,  -0.16857177340133145, -0.05398189913034572},
+};
+
+float centers_f[5][3] = {
+        {-0.260775,            -0.208567,            0.013085},
+        {-0.13337931097454817, -0.09792640328405332, 0.011925746660820238},
+        {0,                    0,                    0},
+        {0.13273071141398268,  -0.07897766327585604, -0.030115580768282482},
+        {0.26841132121195244,  -0.16857177340133145, -0.05398189913034572},
+};
+
 void key_callback(GLFWwindow *window, const int key, const int s, const int action, const int mods) {
     if (action == GLFW_RELEASE)
         return;
     if (action == GLFW_PRESS) {
         if (key >= GLFW_KEY_1 && key <= GLFW_KEY_5)
             cam_select[key - GLFW_KEY_1] = 1 - cam_select[key - GLFW_KEY_1];
+        if (key >= GLFW_KEY_6 && key <= GLFW_KEY_9)
+            camera.Position = centers[key - GLFW_KEY_6];
+        if (key == GLFW_KEY_0)
+            camera.Position = centers[4];
     }
 }
 
 GLenum show_type = GL_FILL;
+int pointSize = 1;
 
 int main() {
     // glfw: initialize and configure
