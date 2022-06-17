@@ -67,6 +67,8 @@ float centers_f[5][3] = {
         {0.26841132121195244,  -0.16857177340133145, -0.05398189913034572},
 };
 
+int pointSize = 1;
+
 void key_callback(GLFWwindow *window, const int key, const int s, const int action, const int mods) {
     if (action == GLFW_RELEASE)
         return;
@@ -77,6 +79,11 @@ void key_callback(GLFWwindow *window, const int key, const int s, const int acti
             camera.Position = centers[key - GLFW_KEY_6];
         if (key == GLFW_KEY_0)
             camera.Position = centers[4];
+        if (key == GLFW_KEY_MINUS)
+            pointSize = std::max(1, pointSize - 1);
+        if (key == GLFW_KEY_EQUAL)
+            pointSize = std::min(10, pointSize + 1);
+
     }
 }
 
@@ -348,6 +355,7 @@ int main() {
             ourShader.setVec3("center", centers[i]);
             ourShader.setInt("idx", i);
             glPolygonMode(GL_FRONT_AND_BACK, show_type);
+            glPointSize(pointSize);
             glBindVertexArray(VAO);
             glEnable(GL_DEPTH_TEST);
             if (cam_select[i])
