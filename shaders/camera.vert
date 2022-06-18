@@ -18,8 +18,12 @@ uniform sampler2D texture2;
 
 void main()
 {
-    gl_Position = projection * view * model
-    * R_inv * K_inv * vec4((aPos.x + 0.5) * width, (aPos.y + 0.5) * height, -texture(texture2, aTexCoord).r*1.0, 1.0f);
+    float depth = (texture2, aTexCoord).r;
+    depth = 1.0f;
+    vec2 uv = vec2(aPos.x * width, aPos.y * height);
+    vec4 Xc = K_inv * vec4(uv, 1.0f, 1.0f);
+    vec4 Xw = R_inv * vec4(Xc.xyz * depth, 1.0f);
+    gl_Position = projection * view * model * vec4(Xw.x, -Xw.y, -Xw.z, Xw.w);
     TexCoord = vec2(aTexCoord.x, aTexCoord.y);
 }
 

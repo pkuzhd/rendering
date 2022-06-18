@@ -20,13 +20,15 @@ void main()
     vec2 left = vec2(1.0f / width, 0.0f);
     vec2 right = vec2(1.0f / width, 0.0f);
     float threshold = 0.12;
-    if (
-    texture(texture2, TexCoord).r < threshold
-    || texture(texture2, TexCoord + up).r < threshold
-    || texture(texture2, TexCoord + down).r < threshold
-    || texture(texture2, TexCoord + left).r < threshold
-    || texture(texture2, TexCoord + right).r < threshold
-    )
-    discard;
+//    if (
+//    texture(texture2, TexCoord).r < threshold
+//    || texture(texture2, TexCoord + up).r < threshold
+//    || texture(texture2, TexCoord + down).r < threshold
+//    || texture(texture2, TexCoord + left).r < threshold
+//    || texture(texture2, TexCoord + right).r < threshold
+//    )
+//    discard;
+//    if (TexCoord.x < 0.3 && TexCoord.y < 0.6)
+//        discard;
 }
 

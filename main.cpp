@@ -34,7 +34,7 @@ const unsigned int SCR_HEIGHT = 900;
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 0.0f),
               glm::vec3(0.0f, 1.0f, 0.0f),
-              YAW - 12, PITCH + 2);
+              YAW, PITCH);
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -137,8 +137,8 @@ int main() {
     float *vertices = new float[5 * (N + 1) * (M + 1)];
     for (int i = 0; i <= N; ++i) {
         for (int j = 0; j <= M; ++j) {
-            vertices[(i * (M + 1) + j) * 5 + 0] = (-0.5 + 1.0 / M * j);
-            vertices[(i * (M + 1) + j) * 5 + 1] = (+0.5 - 1.0 / N * i);
+            vertices[(i * (M + 1) + j) * 5 + 0] = 1.0 / M * j;
+            vertices[(i * (M + 1) + j) * 5 + 1] = 1.0 / N * i;
             vertices[(i * (M + 1) + j) * 5 + 2] = 0.0f;
 
             vertices[(i * (M + 1) + j) * 5 + 3] = 1.0 / M * j;
