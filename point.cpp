@@ -176,14 +176,14 @@ int main() {
 
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader ourShader("/home/zhd/CLionProjects/rendering/shaders/point.vert",
-                     "/home/zhd/CLionProjects/rendering/shaders/point.frag");
+    Shader ourShader("./shaders/point.vert",
+                     "./shaders/point.frag");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     int num_tri = 857132 * 2;
     float *vertices = new float[num_tri * 3 * 6];
-    FILE *f = fopen("/home/zhd/CLionProjects/rendering/data/xyzrgb", "rb");
+    FILE *f = fopen("./data/xyzrgb", "rb");
     fread(vertices, num_tri * 3 * 6 * sizeof(float), 1, f);
     fclose(f);
 //    int num_tri = 12;

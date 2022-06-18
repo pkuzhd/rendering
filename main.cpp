@@ -129,10 +129,10 @@ int main() {
 
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader ourShader("/home/zhd/CLionProjects/rendering/shaders/camera.vert",
-                     "/home/zhd/CLionProjects/rendering/shaders/camera.frag");
+    Shader ourShader("./shaders/camera.vert",
+                     "./shaders/camera.frag");
 
-    // set up vertex data (and buffer(s)) and configure vertex attributes
+    // set up vertex data (and buffer(s)) and configure vertqex attributes
     // ------------------------------------------------------------------
     float *vertices = new float[5 * (N + 1) * (M + 1)];
     for (int i = 0; i <= N; ++i) {
@@ -208,7 +208,7 @@ int main() {
     // load image, create texture and generate mipmaps
     int width, height, nrChannels;
 //    stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-    unsigned char *data = stbi_load(std::string("/home/zhd/CLionProjects/rendering/data/3.png").c_str(), &width,
+    unsigned char *data = stbi_load(std::string("./data/3.png").c_str(), &width,
                                     &height,
                                     &nrChannels, 0);
     if (data) {
@@ -232,7 +232,7 @@ int main() {
     data = reinterpret_cast<unsigned char *>(new float[640 * 384]);
     width = 384;
     height = 640;
-    FILE *f = fopen("/home/zhd/CLionProjects/rendering/data/3.depth2", "rb");
+    FILE *f = fopen("./data/3.depth2", "rb");
     fread(data, 640 * 384 * sizeof(float), 1, f);
     fclose(f);
 
@@ -259,7 +259,7 @@ int main() {
     glm::mat4 K_inv_list[5];
     glm::mat4 R_inv_list[5];
 
-    std::string path = "/home/zhd/CLionProjects/rendering/data/";
+    std::string path = "./data/";
 
     for (int i = 0; i < 5; ++i) {
         glGenTextures(1, &rgb_texture[i]);

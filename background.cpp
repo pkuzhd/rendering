@@ -175,12 +175,12 @@ int main() {
 
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader ourShader("/home/zhd/CLionProjects/rendering/shaders/background.vert",
-                     "/home/zhd/CLionProjects/rendering/shaders/background.frag");
-    Shader updateProgram("/home/zhd/CLionProjects/rendering/shaders/update.vert",
-                         "/home/zhd/CLionProjects/rendering/shaders/update.frag");
-    Shader resolveProgram("/home/zhd/CLionProjects/rendering/shaders/resolve.vert",
-                          "/home/zhd/CLionProjects/rendering/shaders/resolve.frag");
+    Shader ourShader("./shaders/background.vert",
+                     "./shaders/background.frag");
+    Shader updateProgram("./shaders/update.vert",
+                         "./shaders/update.frag");
+    Shader resolveProgram("./shaders/resolve.vert",
+                          "./shaders/resolve.frag");
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     int num_tri = 4;
@@ -237,7 +237,7 @@ int main() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     int width, height, nrChannels;
 //    stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-    unsigned char *data = stbi_load(std::string("/home/zhd/CLionProjects/rendering/data/3.png").c_str(), &width,
+    unsigned char *data = stbi_load(std::string("./data/3.png").c_str(), &width,
                                     &height,
                                     &nrChannels, 0);
     if (data) {

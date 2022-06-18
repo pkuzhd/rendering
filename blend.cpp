@@ -183,17 +183,17 @@ int main() {
 
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader ourShader("/home/zhd/CLionProjects/rendering/shaders/blend.vert",
-                     "/home/zhd/CLionProjects/rendering/shaders/blend.frag");
-    Shader updateProgram("/home/zhd/CLionProjects/rendering/shaders/update.vert",
-                         "/home/zhd/CLionProjects/rendering/shaders/update.frag");
-    Shader resolveProgram("/home/zhd/CLionProjects/rendering/shaders/resolve.vert",
-                          "/home/zhd/CLionProjects/rendering/shaders/resolve.frag");
+    Shader ourShader("./shaders/blend.vert",
+                     "./shaders/blend.frag");
+    Shader updateProgram("./shaders/update.vert",
+                         "./shaders/update.frag");
+    Shader resolveProgram("./shaders/resolve.vert",
+                          "./shaders/resolve.frag");
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     int num_tri = 857132 * 2;
     float *vertices = new float[num_tri * 3 * 6];
-    FILE *f = fopen("/home/zhd/CLionProjects/rendering/data/xyzrgb", "rb");
+    FILE *f = fopen("./data/xyzrgb", "rb");
     fread(vertices, num_tri * 3 * 6 * sizeof(float), 1, f);
     fclose(f);
 //    int num_tri = 12;
