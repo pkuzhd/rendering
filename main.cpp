@@ -32,7 +32,9 @@ const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 900;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 0.0f),
+              glm::vec3(0.0f, 1.0f, 0.0f),
+              YAW - 12, PITCH + 2);
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -46,6 +48,42 @@ float lastFrame = 0.0f;
 
 float w = 384.0f;
 float h = 640.0f;
+
+int pointSize = 1;
+int cam_select[5] = {0, 0, 1, 0, 0};
+glm::vec3 centers[5] = {
+        {-0.260775,            -0.208567,            0.013085},
+        {-0.13337931097454817, -0.09792640328405332, 0.011925746660820238},
+        {0,                    0,                    0},
+        {0.13273071141398268,  -0.07897766327585604, -0.030115580768282482},
+        {0.26841132121195244,  -0.16857177340133145, -0.05398189913034572},
+};
+
+float centers_f[5][3] = {
+        {-0.260775,            -0.208567,            0.013085},
+        {-0.13337931097454817, -0.09792640328405332, 0.011925746660820238},
+        {0,                    0,                    0},
+        {0.13273071141398268,  -0.07897766327585604, -0.030115580768282482},
+        {0.26841132121195244,  -0.16857177340133145, -0.05398189913034572},
+};
+
+void key_callback(GLFWwindow *window, const int key, const int s, const int action, const int mods) {
+    if (action == GLFW_RELEASE)
+        return;
+    if (action == GLFW_PRESS) {
+        if (key >= GLFW_KEY_1 && key <= GLFW_KEY_5)
+            cam_select[key - GLFW_KEY_1] = 1 - cam_select[key - GLFW_KEY_1];
+        if (key >= GLFW_KEY_6 && key <= GLFW_KEY_9)
+            camera.Position = centers[key - GLFW_KEY_6];
+        if (key == GLFW_KEY_0)
+            camera.Position = centers[4];
+        if (key == GLFW_KEY_MINUS)
+            pointSize = std::max(1, pointSize - 1);
+        if (key == GLFW_KEY_EQUAL)
+            pointSize = std::min(10, pointSize + 1);
+
+    }
+}
 
 GLenum show_type = GL_FILL;
 
@@ -73,6 +111,7 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSetKeyCallback(window, key_callback);
 
     // tell GLFW to capture our mouse
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -324,6 +363,7 @@ int main() {
         processInput(window);
 
         glPolygonMode(GL_FRONT_AND_BACK, show_type);
+        glPointSize(pointSize);
         // render
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -343,6 +383,8 @@ int main() {
         ourShader.setMat4("view", view);
 
         for (int i = 0; i < 5; ++i) {
+            if (!cam_select[i])
+                continue;
             // bind textures on corresponding texture units
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, rgb_texture[i]);
@@ -405,14 +447,21 @@ void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
+    float speed = 0.5f;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
+        camera.ProcessKeyboard(FORWARD, deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
+        camera.ProcessKeyboard(BACKWARD, deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
+        camera.ProcessKeyboard(LEFT, deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+        camera.ProcessKeyboard(RIGHT, deltaTime * speed);
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+        camera.ProcessKeyboard(UP, deltaTime * speed);
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+        camera.ProcessKeyboard(DOWN, deltaTime * speed);
+    if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
+        camera.Position = glm::vec3(0.0f, 0.0f, 0.0f);
 
     static bool flag = false;
     if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_PRESS && !flag)

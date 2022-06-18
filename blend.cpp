@@ -409,7 +409,6 @@ void processInput(GLFWwindow *window) {
         glfwSetWindowShouldClose(window, true);
 
     float speed = 0.5f;
-    glfwSetKeyCallback(window, key_callback);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
