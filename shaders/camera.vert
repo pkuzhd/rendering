@@ -20,9 +20,7 @@ uniform sampler2D texture2;
 void main()
 {
     float depth = texture(texture2, aTexCoord).r;
-    if (depth < 0.1)
-        depth = 10.0f;
-//    depth = max(abs(aPos.x - 0.5), abs(aPos.y - 0.5)) + 1.0f;
+
     vec2 uv = vec2(aPos.x * width, aPos.y * height);
     vec4 Xc = K_inv * vec4(uv, 1.0f, 1.0f);
     vec4 Xw = R_inv * vec4(Xc.xyz * depth, 1.0f);

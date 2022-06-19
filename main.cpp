@@ -43,8 +43,8 @@ bool firstMouse = true;
 float deltaTime = 0.0f;    // time between current frame and last frame
 float lastFrame = 0.0f;
 
-#define N 60
-#define M 38
+#define N 640
+#define M 384
 
 float w = 384.0f;
 float h = 640.0f;
@@ -52,19 +52,19 @@ float h = 640.0f;
 int pointSize = 1;
 int cam_select[5] = {0, 0, 1, 0, 0};
 glm::vec3 centers[5] = {
-        {-0.260775,            -0.208567,            0.013085},
-        {-0.13337931097454817, -0.09792640328405332, 0.011925746660820238},
-        {0,                    0,                    0},
-        {0.13273071141398268,  -0.07897766327585604, -0.030115580768282482},
-        {0.26841132121195244,  -0.16857177340133145, -0.05398189913034572},
+        {0.        ,  0.        ,  0.        },
+        {0.13558015,  0.09941017, -0.01442211},
+        {0.27635732,  0.1841515 , -0.03728148},
+        {0.40315295,  0.09187722, -0.0503269 },
+        {0.53194052, -0.01007147, -0.05544123}
 };
 
 float centers_f[5][3] = {
-        {-0.260775,            -0.208567,            0.013085},
-        {-0.13337931097454817, -0.09792640328405332, 0.011925746660820238},
-        {0,                    0,                    0},
-        {0.13273071141398268,  -0.07897766327585604, -0.030115580768282482},
-        {0.26841132121195244,  -0.16857177340133145, -0.05398189913034572},
+        {0.        ,  0.        ,  0.        },
+        {0.13558015,  0.09941017, -0.01442211},
+        {0.27635732,  0.1841515 , -0.03728148},
+        {0.40315295,  0.09187722, -0.0503269 },
+        {0.53194052, -0.01007147, -0.05544123}
 };
 
 void key_callback(GLFWwindow *window, const int key, const int s, const int action, const int mods) {
@@ -269,6 +269,16 @@ int main() {
         for (int j = 0; j < 16; ++j)
             R_inv_list[i][j / 4][j % 4] = para[j];
 
+        cout << K_inv_list[i][0][0] << " " << K_inv_list[i][0][1] << " " << K_inv_list[i][0][2] << " " << K_inv_list[i][0][3] << endl;
+        cout << K_inv_list[i][1][0] << " " << K_inv_list[i][1][1] << " " << K_inv_list[i][1][2] << " " << K_inv_list[i][1][3] << endl;
+        cout << K_inv_list[i][2][0] << " " << K_inv_list[i][2][1] << " " << K_inv_list[i][2][2] << " " << K_inv_list[i][2][3] << endl;
+        cout << K_inv_list[i][3][0] << " " << K_inv_list[i][3][1] << " " << K_inv_list[i][3][2] << " " << K_inv_list[i][3][3] << endl;
+        cout << R_inv_list[i][0][0] << " " << R_inv_list[i][0][1] << " " << R_inv_list[i][0][2] << " " << R_inv_list[i][0][3] << endl;
+        cout << R_inv_list[i][1][0] << " " << R_inv_list[i][1][1] << " " << R_inv_list[i][1][2] << " " << R_inv_list[i][1][3] << endl;
+        cout << R_inv_list[i][2][0] << " " << R_inv_list[i][2][1] << " " << R_inv_list[i][2][2] << " " << R_inv_list[i][2][3] << endl;
+        cout << R_inv_list[i][3][0] << " " << R_inv_list[i][3][1] << " " << R_inv_list[i][3][2] << " " << R_inv_list[i][3][3] << endl;
+        cout << endl;
+
         delete[] para;
     }
 
@@ -323,7 +333,6 @@ int main() {
 
             glm::mat4 K_inv = K_inv_list[i];
             glm::mat4 R_inv = R_inv_list[i];
-            R_inv = glm::mat4(1.0f);
             ourShader.setMat4("K_inv", glm::transpose(K_inv));
             ourShader.setMat4("R_inv", glm::transpose(R_inv));
             ourShader.setFloat("width", width);
@@ -392,6 +401,8 @@ void processInput(GLFWwindow *window) {
         camera.ProcessKeyboard(DOWN, deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
         camera.Position = glm::vec3(0.0f, 0.0f, 0.0f);
+
+//    cout << camera.Position[0] << " " << camera.Position[1] << " " << camera.Position[2] << endl;
 
     static bool flag = false;
     if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_PRESS && !flag)
