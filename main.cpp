@@ -159,19 +159,6 @@ int main() {
         }
     }
 
-    // world space positions of our cubes
-//    glm::vec3 cubePositions[] = {
-//            glm::vec3(0.0f, 0.0f, 0.0f),
-//            glm::vec3(2.0f, 5.0f, -15.0f),
-//            glm::vec3(-1.5f, -2.2f, -2.5f),
-//            glm::vec3(-3.8f, -2.0f, -12.3f),
-//            glm::vec3(2.4f, -0.4f, -3.5f),
-//            glm::vec3(-1.7f, 3.0f, -7.5f),
-//            glm::vec3(1.3f, -2.0f, -2.5f),
-//            glm::vec3(1.5f, 2.0f, -2.5f),
-//            glm::vec3(1.5f, 0.2f, -1.5f),
-//            glm::vec3(-1.3f, 1.0f, -1.5f)
-//    };
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -192,68 +179,11 @@ int main() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    // load and create a texture
-    // -------------------------
-    unsigned int texture1, texture2;
-    // texture 1
-    // ---------
-    glGenTextures(1, &texture1);
-    glBindTexture(GL_TEXTURE_2D, texture1);
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // load image, create texture and generate mipmaps
-    int width, height, nrChannels;
-//    stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-    unsigned char *data = stbi_load(std::string("./data/3.png").c_str(), &width,
-                                    &height,
-                                    &nrChannels, 0);
-    if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
-    // texture 2
-    // ---------
-    glGenTextures(1, &texture2);
-    glBindTexture(GL_TEXTURE_2D, texture2);
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    data = reinterpret_cast<unsigned char *>(new float[640 * 384]);
+    int width, height, nrChannels;
+    unsigned char *data;
     width = 384;
     height = 640;
-    FILE *f = fopen("./data/3.depth2", "rb");
-    fread(data, 640 * 384 * sizeof(float), 1, f);
-    fclose(f);
-
-//    memset(data, 0, 640 * 384 * sizeof(float));
-//
-//    for (int i = 160; i < 320; ++i) {
-//        for (int j = 64; j < 192; ++j) {
-//            ((float *) data)[i * 384 + j] = ((j - 64) / 128.0 / 2.0 + (i - 160) / 160.0 / 2.0)/10.0;
-//        }
-//    }
-    // load image, create texture and generate mipmaps
-//    data = stbi_load(std::string("resources/textures/awesomeface.png").c_str(), &width, &height, &nrChannels, 0);
-    if (data) {
-        // note that the awesomeface.png has transparency and thus an alpha channel, so make sure to tell OpenGL the data type is of GL_RGBA
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_FLOAT, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-//    stbi_image_free(data);
-    delete[] data;
 
     unsigned int rgb_texture[5], depth_texture[5];
     glm::mat4 K_inv_list[5];
@@ -299,8 +229,8 @@ int main() {
         fread(data, 640 * 384 * sizeof(float), 1, f);
         fclose(f);
 
-//    memset(data, 0, 640 * 384 * sizeof(float));
-//
+//        memset(data, 0, 640 * 384 * sizeof(float));
+
 //    for (int i = 160; i < 320; ++i) {
 //        for (int j = 64; j < 192; ++j) {
 //            ((float *) data)[i * 384 + j] = ((j - 64) / 128.0 / 2.0 + (i - 160) / 160.0 / 2.0)/10.0;
@@ -310,7 +240,7 @@ int main() {
 //    data = stbi_load(std::string("resources/textures/awesomeface.png").c_str(), &width, &height, &nrChannels, 0);
         if (data) {
             // note that the awesomeface.png has transparency and thus an alpha channel, so make sure to tell OpenGL the data type is of GL_RGBA
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_FLOAT, data);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RED, GL_FLOAT, data);
             glGenerateMipmap(GL_TEXTURE_2D);
         } else {
             std::cout << "Failed to load texture" << std::endl;
@@ -504,7 +434,7 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
     lastX = xpos;
     lastY = ypos;
 
-    camera.ProcessMouseMovement(xoffset * 0.5f, yoffset * 0.5f);
+    camera.ProcessMouseMovement(xoffset * 0.2f, yoffset * 0.2f);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
