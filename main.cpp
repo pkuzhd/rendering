@@ -185,7 +185,7 @@ int main() {
     width = 384;
     height = 640;
 
-    unsigned int rgb_texture[5], depth_texture[5];
+    unsigned int rgb_texture[5], depth_texture[5], mask_texture[5];
     glm::mat4 K_inv_list[5];
     glm::mat4 R_inv_list[5];
 
@@ -246,6 +246,38 @@ int main() {
             std::cout << "Failed to load texture" << std::endl;
         }
 //    stbi_image_free(data);
+
+        glGenTextures(1, &mask_texture[i]);
+        glBindTexture(GL_TEXTURE_2D, mask_texture[i]);
+        // set the texture wrapping parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // set texture filtering parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        width = 384;
+        height = 640;
+        f = fopen((path + std::to_string(i + 1) + ".mask").c_str(), "rb");
+        fread(data, 640 * 384 * sizeof(unsigned char), 1, f);
+        fclose(f);
+
+//        memset(data, 0, 640 * 384 * sizeof(float));
+
+//    for (int i = 160; i < 320; ++i) {
+//        for (int j = 64; j < 192; ++j) {
+//            ((float *) data)[i * 384 + j] = ((j - 64) / 128.0 / 2.0 + (i - 160) / 160.0 / 2.0)/10.0;
+//        }
+//    }
+        // load image, create texture and generate mipmaps
+//    data = stbi_load(std::string("resources/textures/awesomeface.png").c_str(), &width, &height, &nrChannels, 0);
+        if (data) {
+            // note that the awesomeface.png has transparency and thus an alpha channel, so make sure to tell OpenGL the data type is of GL_RGBA
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        } else {
+            std::cout << "Failed to load texture" << std::endl;
+        }
         delete[] data;
 
         float *para = new float[16];
@@ -287,6 +319,7 @@ int main() {
     ourShader.use();
     ourShader.setInt("texture1", 0);
     ourShader.setInt("texture2", 1);
+    ourShader.setInt("texture3", 2);
 
 
     // render loop
@@ -330,6 +363,8 @@ int main() {
             glBindTexture(GL_TEXTURE_2D, rgb_texture[i]);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, depth_texture[i]);
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, mask_texture[i]);
 
             glm::mat4 K_inv = K_inv_list[i];
             glm::mat4 R_inv = R_inv_list[i];
