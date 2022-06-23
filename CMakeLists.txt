@@ -22,7 +22,11 @@ add_executable(blend
 add_executable(background
         background.cpp
         glad.c
+        ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
         )
+
+add_executable(plyreader plyreader.cpp ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp)
+
 
 target_link_libraries(
         rendering

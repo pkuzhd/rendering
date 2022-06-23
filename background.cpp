@@ -15,6 +15,9 @@
 #include <iostream>
 #include <string>
 
+#include "ply/PlyReader.h"
+#include "ply/plyUtils.h"
+
 using std::cout;
 using std::endl;
 using std::string;
@@ -183,25 +186,73 @@ int main() {
                           "./shaders/resolve.frag");
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
-    int num_tri = 4;
-    int num_ver = 6;
+    double *vertexArrayPLY, *coordArrayPLY, *allPLY;
+    int vertexSize = 0;
+    int faceIndexSize = 0;
+    int faceCoordSize = 0;
+
+    {
+        clock_t start = clock();
+        int vertexPropertySize = 3;
+        int faceIndexPropertySize = 3;
+        int faceCoordPorpertySize = 6;
+        std::string path = "data/scene_dense_mesh_refine_texture.ply";
+        PlyReader *reader = initialReader(path);
+        double *tmp = initialDoubleArray(reader, elementVertex, vertexPropertySize, &vertexSize);
+        long *indexArray = initialLongArray(reader, elementFace, faceIndexPropertySize, &faceIndexSize);
+        coordArrayPLY = initialDoubleArray(reader, elementFace, faceCoordPorpertySize, &faceCoordSize);
+
+        assert(faceIndexSize == faceCoordSize);
+//        comment *textureComment = getComment(reader);
+        getArrayfromPly(reader, tmp, coordArrayPLY, indexArray);
+//        clock_t end = clock();
+//        auto b = deleteItems(reader, vertexArray, coordArray, indexArray, textureComment);
+//        std::cout << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
+        vertexArrayPLY = new double[faceIndexSize * faceIndexPropertySize * 3];
+        for (int i = 0; i < faceIndexSize; ++i) {
+            vertexArrayPLY[9 * i + 0] = tmp[3 * indexArray[3 * i + 0] + 0];
+            vertexArrayPLY[9 * i + 1] = tmp[3 * indexArray[3 * i + 0] + 1];
+            vertexArrayPLY[9 * i + 2] = tmp[3 * indexArray[3 * i + 0] + 2];
+            vertexArrayPLY[9 * i + 3] = tmp[3 * indexArray[3 * i + 1] + 0];
+            vertexArrayPLY[9 * i + 4] = tmp[3 * indexArray[3 * i + 1] + 1];
+            vertexArrayPLY[9 * i + 5] = tmp[3 * indexArray[3 * i + 1] + 2];
+            vertexArrayPLY[9 * i + 6] = tmp[3 * indexArray[3 * i + 2] + 0];
+            vertexArrayPLY[9 * i + 7] = tmp[3 * indexArray[3 * i + 2] + 1];
+            vertexArrayPLY[9 * i + 8] = tmp[3 * indexArray[3 * i + 2] + 2];
+        }
+        allPLY = new double[faceIndexSize * 5 * 3];
+        memcpy(allPLY, vertexArrayPLY, sizeof(double) * faceIndexSize * 3 * 3);
+        memcpy(allPLY + faceIndexSize * 3 * 3, coordArrayPLY, sizeof(double) * faceIndexSize * 2 * 3);
+        delete[]tmp;
+        delete[]indexArray;
+        delete[]vertexArrayPLY;
+        delete[]coordArrayPLY;
+    }
+    int num_tri = faceIndexSize;
+//    int num_ver = 6;
+
 //    float *vertices = new float[5 * num_ver];
 //    unsigned int *indices = new unsigned int[num_tri * 3];
     float vertices[] = {
-            -1, 1, 4, 0, 1,
-            0, 1, 4, 1, 1,
-            1, 1, 4, 0, 1,
-
-            -1, -1, 4, 0, 0,
-            0, -1, 4, 1, 0,
-            1, -1, 4, 0, 0,
+            -1, 1, 4, 0, 1, // 0
+            0, 1, 4, 1, 1, // 1
+            0, -1, 4, 1, 0, // 4
+            -1, 1, 4, 0, 1, // 0
+            0, -1, 4, 1, 0, // 4
+            -1, -1, 4, 0, 0, // 3
+            0, 1, 4, 1, 1, // 1
+            1, 1, 4, 0, 1, // 2
+            1, -1, 4, 0, 0, // 5
+            0, 1, 4, 1, 1, // 1
+            1, -1, 4, 0, 0, // 5
+            0, -1, 4, 1, 0, // 4
     };
-    unsigned int indices[12] = {
-            0, 1, 4,
-            0, 4, 3,
-            1, 2, 5,
-            1, 5, 4
-    };
+//    unsigned int indices[12] = {
+//            0, 1, 4,
+//            0, 4, 3,
+//            1, 2, 5,
+//            1, 5, 4
+//    };
 
     glm::vec3 cubePositions[] = {
             glm::vec3(0.0f, 0.0f, 0.0f),
@@ -213,15 +264,18 @@ int main() {
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * num_ver * 5 * num_tri, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(double) * 3 * 5 * num_tri, allPLY, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 3 * num_ver, indices, GL_STATIC_DRAW);
+//    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(double) * 3 * 3 * num_tri, &vertexArrayPLY);
+//    glBufferSubData(GL_ARRAY_BUFFER, sizeof(double) * 3 * 3 * num_tri, sizeof(double) * 3 * 2 * num_tri, &coordArrayPLY);
+
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 3 * num_ver, indices, GL_STATIC_DRAW);
     // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void *) 0);
     glEnableVertexAttribArray(0);
     // texture coord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 2 * sizeof(double), (void *) (sizeof(double) * 3 * 3 * num_tri));
     glEnableVertexAttribArray(1);
 
     unsigned int texture1;
@@ -237,7 +291,7 @@ int main() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     int width, height, nrChannels;
 //    stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-    unsigned char *data = stbi_load(std::string("./data/3.png").c_str(), &width,
+    unsigned char *data = stbi_load(std::string("./data/scene_dense_mesh_refine_texture.png").c_str(), &width,
                                     &height,
                                     &nrChannels, 0);
     if (data) {
@@ -317,17 +371,19 @@ int main() {
         glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        glEnable(GL_CULL_FACE);
         // renderSubframe
         ourShader.use();
         glPolygonMode(GL_FRONT_AND_BACK, show_type);
         glBindVertexArray(VAO);
         glBindTexture(GL_TEXTURE_2D, texture1);
         glEnable(GL_DEPTH_TEST);
-        glDrawElements(GL_TRIANGLES, 3 * num_tri, GL_UNSIGNED_INT, 0);
+//        glDrawElements(GL_TRIANGLES, 3 * num_tri, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_TRIANGLES, 0, 3 * num_tri);
 
         glDisable(GL_DEPTH_TEST);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glDisable(GL_CULL_FACE);
 
         // updateAccumulation
         updateProgram.use();
@@ -372,7 +428,7 @@ void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    float speed = 0.5f;
+    float speed = 2.0f;
     glfwSetKeyCallback(window, key_callback);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime * speed);
