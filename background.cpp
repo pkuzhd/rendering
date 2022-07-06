@@ -178,7 +178,9 @@ int main() {
 
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader ourShader("./shaders/background.vert",
+    Shader ourShader("./shaders/blend.vert",
+                     "./shaders/blend.frag");
+    Shader backgroundProgram("./shaders/background.vert",
                      "./shaders/background.frag");
     Shader updateProgram("./shaders/update.vert",
                          "./shaders/update.frag");
@@ -228,25 +230,25 @@ int main() {
         delete[]vertexArrayPLY;
         delete[]coordArrayPLY;
     }
-    int num_tri = faceIndexSize;
+    int num_tri_background = faceIndexSize;
 //    int num_ver = 6;
 
 //    float *vertices = new float[5 * num_ver];
-//    unsigned int *indices = new unsigned int[num_tri * 3];
-    float vertices[] = {
-            -1, 1, 4, 0, 1, // 0
-            0, 1, 4, 1, 1, // 1
-            0, -1, 4, 1, 0, // 4
-            -1, 1, 4, 0, 1, // 0
-            0, -1, 4, 1, 0, // 4
-            -1, -1, 4, 0, 0, // 3
-            0, 1, 4, 1, 1, // 1
-            1, 1, 4, 0, 1, // 2
-            1, -1, 4, 0, 0, // 5
-            0, 1, 4, 1, 1, // 1
-            1, -1, 4, 0, 0, // 5
-            0, -1, 4, 1, 0, // 4
-    };
+//    unsigned int *indices = new unsigned int[num_tri_background * 3];
+//    float vertices[] = {
+//            -1, 1, 4, 0, 1, // 0
+//            0, 1, 4, 1, 1, // 1
+//            0, -1, 4, 1, 0, // 4
+//            -1, 1, 4, 0, 1, // 0
+//            0, -1, 4, 1, 0, // 4
+//            -1, -1, 4, 0, 0, // 3
+//            0, 1, 4, 1, 1, // 1
+//            1, 1, 4, 0, 1, // 2
+//            1, -1, 4, 0, 0, // 5
+//            0, 1, 4, 1, 1, // 1
+//            1, -1, 4, 0, 0, // 5
+//            0, -1, 4, 1, 0, // 4
+//    };
 //    unsigned int indices[12] = {
 //            0, 1, 4,
 //            0, 4, 3,
@@ -257,26 +259,43 @@ int main() {
     glm::vec3 cubePositions[] = {
             glm::vec3(0.0f, 0.0f, 0.0f),
     };
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    unsigned int backgroundVBO, backgroundVAO;
+    glGenVertexArrays(1, &backgroundVAO);
+    glGenBuffers(1, &backgroundVBO);
 
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(double) * 3 * 5 * num_tri, allPLY, GL_STATIC_DRAW);
+    glBindVertexArray(backgroundVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, backgroundVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(double) * 3 * 5 * num_tri_background, allPLY, GL_STATIC_DRAW);
 
-//    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(double) * 3 * 3 * num_tri, &vertexArrayPLY);
-//    glBufferSubData(GL_ARRAY_BUFFER, sizeof(double) * 3 * 3 * num_tri, sizeof(double) * 3 * 2 * num_tri, &coordArrayPLY);
-
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 3 * num_ver, indices, GL_STATIC_DRAW);
     // position attribute
     glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void *) 0);
     glEnableVertexAttribArray(0);
     // texture coord attribute
-    glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 2 * sizeof(double), (void *) (sizeof(double) * 3 * 3 * num_tri));
+    glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 2 * sizeof(double), (void *) (sizeof(double) * 3 * 3 * num_tri_background));
     glEnableVertexAttribArray(1);
+
+    int num_tri = 857132 * 2;
+    float *vertices = new float[num_tri * 3 * 6];
+    FILE *f = fopen("./data/xyzrgb", "rb");
+    fread(vertices, num_tri * 3 * 6 * sizeof(float), 1, f);
+    fclose(f);
+
+    unsigned int VBO, VAO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 3 * num_tri, vertices, GL_STATIC_DRAW);
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
+    // texture coord attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    
 
     unsigned int texture1;
     // texture 1
@@ -304,7 +323,7 @@ int main() {
 
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
     // -------------------------------------------------------------------------------------------
-    ourShader.use();
+    backgroundProgram.use();
     updateProgram.setInt("texture1", 0);
 
     updateProgram.use();
@@ -355,11 +374,17 @@ int main() {
         model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 
 
+        int tris[] = {0, 176124, 348068, 520032, 688200, 857132};
         // activate shader
+        backgroundProgram.use();
+        backgroundProgram.setMat4("projection", projection);
+        backgroundProgram.setMat4("view", view);
+        backgroundProgram.setMat4("model", model);
         ourShader.use();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
         ourShader.setMat4("model", model);
+        glUniform3fv(glGetUniformLocation(ourShader.ID, "centers"), 5, reinterpret_cast<const GLfloat *>(centers_f));
 
         // clearAccumulation
         glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
@@ -367,35 +392,71 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 //        glEnable(GL_FRAMEBUFFER_SRGB);
 
-        // clearSubframe
-        glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_CULL_FACE);
-        // renderSubframe
-        ourShader.use();
-        glPolygonMode(GL_FRONT_AND_BACK, show_type);
-        glBindVertexArray(VAO);
-        glBindTexture(GL_TEXTURE_2D, texture1);
-        glEnable(GL_DEPTH_TEST);
-//        glDrawElements(GL_TRIANGLES, 3 * num_tri, GL_UNSIGNED_INT, 0);
-        glDrawArrays(GL_TRIANGLES, 0, 3 * num_tri);
+        {
+            // clearSubframe
+            glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO);
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_CULL_FACE);
+            // renderSubframe
+            backgroundProgram.use();
+            glPolygonMode(GL_FRONT_AND_BACK, show_type);
+            glBindVertexArray(backgroundVAO);
+            glBindTexture(GL_TEXTURE_2D, texture1);
+            glEnable(GL_DEPTH_TEST);
+//        glDrawElements(GL_TRIANGLES, 3 * num_tri_background, GL_UNSIGNED_INT, 0);
+            glDrawArrays(GL_TRIANGLES, 0, 3 * num_tri_background);
 
-        glDisable(GL_DEPTH_TEST);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glDisable(GL_CULL_FACE);
+            glDisable(GL_DEPTH_TEST);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glDisable(GL_CULL_FACE);
 
-        // updateAccumulation
-        updateProgram.use();
-        glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
-        glEnable(GL_BLEND);
-        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE);
+            // updateAccumulation
+            updateProgram.use();
+            glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
+            glEnable(GL_BLEND);
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE);
 
-        glBindVertexArray(screenVAO);
-        glBindTexture(GL_TEXTURE_2D, cameraTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindVertexArray(screenVAO);
+            glBindTexture(GL_TEXTURE_2D, cameraTexture);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        glDisable(GL_BLEND);
+            glDisable(GL_BLEND);
+        }
+
+        for (int i = 0; i < 5; ++i) {
+            // clearSubframe
+            glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO);
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            // renderSubframe
+            ourShader.use();
+            ourShader.setVec3("center", centers[i]);
+            ourShader.setInt("idx", i);
+            glPolygonMode(GL_FRONT_AND_BACK, show_type);
+//            glPointSize(pointSize);
+            glBindVertexArray(VAO);
+            glEnable(GL_DEPTH_TEST);
+//            glEnable(GL_CULL_FACE);
+            if (cam_select[i])
+                glDrawArrays(GL_TRIANGLES, 6 * tris[i], 6 * (tris[i + 1] - tris[i]));
+//            glDisable(GL_CULL_FACE);
+            glDisable(GL_DEPTH_TEST);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+            // updateAccumulation
+            updateProgram.use();
+            glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
+            glEnable(GL_BLEND);
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE);
+
+            glBindVertexArray(screenVAO);
+            glBindTexture(GL_TEXTURE_2D, cameraTexture);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            glDisable(GL_BLEND);
+        }
 
         // resolveAccumulation
         resolveProgram.use();
@@ -413,8 +474,8 @@ int main() {
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &backgroundVAO);
+    glDeleteBuffers(1, &backgroundVBO);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
