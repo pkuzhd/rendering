@@ -15,6 +15,9 @@
 #include <iostream>
 #include <string>
 
+#include "ply/PlyReader.h"
+#include "ply/plyUtils.h"
+
 using std::cout;
 using std::endl;
 using std::string;
@@ -127,10 +130,14 @@ int main() {
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-    // build and compile our shader zprogram
-    // ------------------------------------
     Shader ourShader("./shaders/camera.vert",
                      "./shaders/camera.frag");
+    Shader backgroundProgram("./shaders/background.vert",
+                             "./shaders/background.frag");
+    Shader updateProgram("./shaders/update.vert",
+                         "./shaders/update.frag");
+    Shader resolveProgram("./shaders/resolve.vert",
+                          "./shaders/resolve.frag");
 
     // set up vertex data (and buffer(s)) and configure vertqex attributes
     // ------------------------------------------------------------------

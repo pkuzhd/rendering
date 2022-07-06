@@ -1,0 +1,8 @@
+//
+// Created by zhd on 2022/7/6.
+//
+
+#ifndef RENDERING_LOADCAMPARA_H
+#define RENDERING_LOADCAMPARA_H
+
+#endif //RENDERING_LOADCAMPARA_H

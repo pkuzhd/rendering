@@ -9,6 +9,8 @@ find_package(glfw3)
 add_executable(rendering
         main.cpp
         glad.c
+        ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
+#        utils/Renderer.cpp utils/Renderer.h
         )
 
 add_executable(point
@@ -23,6 +25,7 @@ add_executable(background
         background.cpp
         glad.c
         ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
+        utils/loadCamPara.cpp utils/Renderer.cpp
         )
 
 add_executable(plyreader plyreader.cpp ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp)

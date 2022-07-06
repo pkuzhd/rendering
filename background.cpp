@@ -17,6 +17,7 @@
 
 #include "ply/PlyReader.h"
 #include "ply/plyUtils.h"
+#include "utils/Renderer.h"
 
 using std::cout;
 using std::endl;
@@ -112,7 +113,7 @@ int main() {
     glfwSetKeyCallback(window, key_callback);
 
     // tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+//    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -123,65 +124,29 @@ int main() {
 
     GLint FBO;
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &FBO);
-
-    GLuint accumulateFBO;
-    GLuint accumulateTexture;
-    {
-        glGenFramebuffers(1, &accumulateFBO);
-        glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
-
-        glGenTextures(1, &accumulateTexture);
-        glBindTexture(GL_TEXTURE_2D, accumulateTexture);
-        glTexImage2D(
-                GL_TEXTURE_2D,
-                0, // level
-                GL_RGBA32F,
-                SCR_WIDTH,
-                SCR_HEIGHT,
-                0, // border must be 0
-                GL_RGBA,
-                GL_BYTE,
-                NULL); // no pixel data
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, accumulateTexture, 0);
-    }
-
-    GLuint cameraFBO;
-    GLuint cameraTexture;
-    GLuint cameraDepth;
-    {
-        glGenFramebuffers(1, &cameraFBO);
-        glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO);
-
-        glGenTextures(1, &cameraTexture);
-        glBindTexture(GL_TEXTURE_2D, cameraTexture);
-        glTexImage2D(
-                GL_TEXTURE_2D,
-                0, // level
-                GL_RGBA32F,
-                SCR_WIDTH,
-                SCR_HEIGHT,
-                0, // border must be 0
-                GL_RGBA,
-                GL_BYTE,
-                NULL); // no pixel data
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cameraTexture, 0);
-
-        glGenRenderbuffers(1, &cameraDepth);
-        glBindRenderbuffer(GL_RENDERBUFFER, cameraDepth);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, cameraDepth);
-    }
+//    {
+//        Renderer renderer(FBO);
+//        renderer.createFramebuffers(SCR_WIDTH, SCR_HEIGHT);
+//    }
+//    {
+//        Renderer renderer(FBO);
+//    }
+//    {
+//        Renderer renderer(FBO);
+//    }
+//    {
+//        Renderer renderer(FBO);
+//        renderer.createFramebuffers(SCR_WIDTH, SCR_HEIGHT);
+//    }
+    Renderer renderer(FBO);
+    renderer.createFramebuffers(SCR_WIDTH, SCR_HEIGHT);
 
     // build and compile our shader zprogram
     // ------------------------------------
     Shader ourShader("./shaders/blend.vert",
                      "./shaders/blend.frag");
     Shader backgroundProgram("./shaders/background.vert",
-                     "./shaders/background.frag");
+                             "./shaders/background.frag");
     Shader updateProgram("./shaders/update.vert",
                          "./shaders/update.frag");
     Shader resolveProgram("./shaders/resolve.vert",
@@ -231,30 +196,6 @@ int main() {
         delete[]coordArrayPLY;
     }
     int num_tri_background = faceIndexSize;
-//    int num_ver = 6;
-
-//    float *vertices = new float[5 * num_ver];
-//    unsigned int *indices = new unsigned int[num_tri_background * 3];
-//    float vertices[] = {
-//            -1, 1, 4, 0, 1, // 0
-//            0, 1, 4, 1, 1, // 1
-//            0, -1, 4, 1, 0, // 4
-//            -1, 1, 4, 0, 1, // 0
-//            0, -1, 4, 1, 0, // 4
-//            -1, -1, 4, 0, 0, // 3
-//            0, 1, 4, 1, 1, // 1
-//            1, 1, 4, 0, 1, // 2
-//            1, -1, 4, 0, 0, // 5
-//            0, 1, 4, 1, 1, // 1
-//            1, -1, 4, 0, 0, // 5
-//            0, -1, 4, 1, 0, // 4
-//    };
-//    unsigned int indices[12] = {
-//            0, 1, 4,
-//            0, 4, 3,
-//            1, 2, 5,
-//            1, 5, 4
-//    };
 
     glm::vec3 cubePositions[] = {
             glm::vec3(0.0f, 0.0f, 0.0f),
@@ -271,7 +212,8 @@ int main() {
     glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void *) 0);
     glEnableVertexAttribArray(0);
     // texture coord attribute
-    glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 2 * sizeof(double), (void *) (sizeof(double) * 3 * 3 * num_tri_background));
+    glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 2 * sizeof(double),
+                          (void *) (sizeof(double) * 3 * 3 * num_tri_background));
     glEnableVertexAttribArray(1);
 
     int num_tri = 857132 * 2;
@@ -295,7 +237,7 @@ int main() {
     // texture coord attribute
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    
+
 
     unsigned int texture1;
     // texture 1
@@ -339,18 +281,6 @@ int main() {
     };
 
 
-    unsigned int screenVBO, screenVAO;
-    glGenVertexArrays(1, &screenVAO);
-    glGenBuffers(1, &screenVBO);
-
-    glBindVertexArray(screenVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, tex, GL_STATIC_DRAW);
-
-    // position attribute
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void *) 0);
-    glEnableVertexAttribArray(0);
 
     // render loop
     // -----------
@@ -387,14 +317,14 @@ int main() {
         glUniform3fv(glGetUniformLocation(ourShader.ID, "centers"), 5, reinterpret_cast<const GLfloat *>(centers_f));
 
         // clearAccumulation
-        glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, renderer.accumulateFBO);
         glClearColor(0, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT);
 //        glEnable(GL_FRAMEBUFFER_SRGB);
 
         {
             // clearSubframe
-            glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, renderer.cameraFBO);
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glEnable(GL_CULL_FACE);
@@ -413,12 +343,12 @@ int main() {
 
             // updateAccumulation
             updateProgram.use();
-            glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, renderer.accumulateFBO);
             glEnable(GL_BLEND);
             glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE);
 
-            glBindVertexArray(screenVAO);
-            glBindTexture(GL_TEXTURE_2D, cameraTexture);
+            glBindVertexArray(renderer.screenVAO);
+            glBindTexture(GL_TEXTURE_2D, renderer.cameraTexture);
             glDrawArrays(GL_TRIANGLES, 0, 3);
 
             glDisable(GL_BLEND);
@@ -426,7 +356,7 @@ int main() {
 
         for (int i = 0; i < 5; ++i) {
             // clearSubframe
-            glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, renderer.cameraFBO);
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -447,12 +377,12 @@ int main() {
 
             // updateAccumulation
             updateProgram.use();
-            glBindFramebuffer(GL_FRAMEBUFFER, accumulateFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, renderer.accumulateFBO);
             glEnable(GL_BLEND);
             glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE);
 
-            glBindVertexArray(screenVAO);
-            glBindTexture(GL_TEXTURE_2D, cameraTexture);
+            glBindVertexArray(renderer.screenVAO);
+            glBindTexture(GL_TEXTURE_2D, renderer.cameraTexture);
             glDrawArrays(GL_TRIANGLES, 0, 3);
 
             glDisable(GL_BLEND);
@@ -460,10 +390,9 @@ int main() {
 
         // resolveAccumulation
         resolveProgram.use();
-        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-        glBindVertexArray(screenVAO);
-        glBindTexture(GL_TEXTURE_2D, accumulateTexture);
+        glBindFramebuffer(GL_FRAMEBUFFER, renderer.FBO);
+        glBindVertexArray(renderer.screenVAO);
+        glBindTexture(GL_TEXTURE_2D, renderer.accumulateTexture);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
