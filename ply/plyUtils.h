@@ -1,6 +1,8 @@
 #ifndef PLYUTILS_H
 #define PLYUTILS_H
 
+#include <assert.h>
+
 #define my_value_t double
 #define my_index_t int64_t
 #define my_byte_t uint64_t
@@ -13,28 +15,28 @@ struct comment {
     std::string address;
 };
 
-comment *getComment(PlyReader *reader) {
+static comment *getComment(PlyReader *reader) {
     comment *nComment = new comment;
     nComment->type = reader->get_comment_type();
     nComment->address = reader->get_comment_address();
     return nComment;
 }
 
-PlyReader *initialReader(std::string const &path) {
+static PlyReader *initialReader(std::string const &path) {
     return new PlyReader(path);
 }
 
-double *initialDoubleArray(PlyReader *reader, int elementIndex, int propertySize, int *elementSize) {
+static double *initialDoubleArray(PlyReader *reader, int elementIndex, int propertySize, int *elementSize) {
     *elementSize = reader->element_size(elementIndex);
     return new double[propertySize * (*elementSize)];
 }
 
-long *initialLongArray(PlyReader *reader, int elementIndex, int propertySize, int *elementSize) {
+static long *initialLongArray(PlyReader *reader, int elementIndex, int propertySize, int *elementSize) {
     *elementSize = reader->element_size(elementIndex);
     return new long[propertySize * (*elementSize)];
 }
 
-bool getArrayfromPly(PlyReader *reader, double *vertexArray, double *coordArray, long *indexArray) {
+static bool getArrayfromPly(PlyReader *reader, double *vertexArray, double *coordArray, long *indexArray) {
     assert(reader->element_num() == 2);
     for (int index = 0; index < reader->element_num(); index++) {
         auto elementSize = reader->element_size(index);
@@ -65,7 +67,7 @@ bool getArrayfromPly(PlyReader *reader, double *vertexArray, double *coordArray,
     return true;
 }
 
-bool
+static bool
 deleteItems(PlyReader *reader, double *vertexArray, double *coordArray, long *indexArray, comment *textureComment) {
     delete reader;
     delete vertexArray;
