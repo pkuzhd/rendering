@@ -5,12 +5,13 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_CXX_STANDARD 14)
 find_package(glfw3)
+find_package(jsoncpp)
 
 add_executable(rendering
         main.cpp
         glad.c
         ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
-#        utils/Renderer.cpp utils/Renderer.h
+        utils/Renderer.cpp
         )
 
 add_executable(point
@@ -34,6 +35,7 @@ add_executable(plyreader plyreader.cpp ply/PlyReader.cpp ply/system.cpp ply/plyU
 target_link_libraries(
         rendering
         glfw
+        jsoncpp
 )
 target_link_libraries(
         point

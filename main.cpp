@@ -1,9 +1,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-
+//#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
+#include <jsoncpp/json/json.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -17,6 +18,7 @@
 
 #include "ply/PlyReader.h"
 #include "ply/plyUtils.h"
+#include "utils/Renderer.h"
 
 using std::cout;
 using std::endl;
@@ -53,22 +55,25 @@ float w = 384.0f;
 float h = 640.0f;
 
 int pointSize = 1;
-int cam_select[5] = {0, 0, 1, 0, 0};
+int cam_select[5] = {1, 1, 1, 1, 1};
 glm::vec3 centers[5] = {
-        {0.        ,  0.        ,  0.        },
-        {0.13558015,  0.09941017, -0.01442211},
-        {0.27635732,  0.1841515 , -0.03728148},
-        {0.40315295,  0.09187722, -0.0503269 },
+        {0.,         0.,          0.},
+        {0.13558015, 0.09941017,  -0.01442211},
+        {0.27635732, 0.1841515,   -0.03728148},
+        {0.40315295, 0.09187722,  -0.0503269},
         {0.53194052, -0.01007147, -0.05544123}
 };
 
 float centers_f[5][3] = {
-        {0.        ,  0.        ,  0.        },
-        {0.13558015,  0.09941017, -0.01442211},
-        {0.27635732,  0.1841515 , -0.03728148},
-        {0.40315295,  0.09187722, -0.0503269 },
+        {0.,         0.,          0.},
+        {0.13558015, 0.09941017,  -0.01442211},
+        {0.27635732, 0.1841515,   -0.03728148},
+        {0.40315295, 0.09187722,  -0.0503269},
         {0.53194052, -0.01007147, -0.05544123}
 };
+
+GLuint show_type = GL_FILL;
+GLuint cursor_type = GLFW_CURSOR_DISABLED;
 
 void key_callback(GLFWwindow *window, const int key, const int s, const int action, const int mods) {
     if (action == GLFW_RELEASE)
@@ -84,11 +89,10 @@ void key_callback(GLFWwindow *window, const int key, const int s, const int acti
             pointSize = std::max(1, pointSize - 1);
         if (key == GLFW_KEY_EQUAL)
             pointSize = std::min(10, pointSize + 1);
-
+        if (key == GLFW_KEY_COMMA)
+            cursor_type = cursor_type == GLFW_CURSOR_DISABLED ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
     }
 }
-
-GLenum show_type = GL_FILL;
 
 int main() {
     // glfw: initialize and configure
@@ -130,205 +134,106 @@ int main() {
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-    Shader ourShader("./shaders/camera.vert",
-                     "./shaders/camera.frag");
-    Shader backgroundProgram("./shaders/background.vert",
-                             "./shaders/background.frag");
-    Shader updateProgram("./shaders/update.vert",
-                         "./shaders/update.frag");
-    Shader resolveProgram("./shaders/resolve.vert",
-                          "./shaders/resolve.frag");
 
-    // set up vertex data (and buffer(s)) and configure vertqex attributes
-    // ------------------------------------------------------------------
-    float *vertices = new float[5 * (N + 1) * (M + 1)];
-    for (int i = 0; i <= N; ++i) {
-        for (int j = 0; j <= M; ++j) {
-            vertices[(i * (M + 1) + j) * 5 + 0] = 1.0 / M * j;
-            vertices[(i * (M + 1) + j) * 5 + 1] = 1.0 / N * i;
-            vertices[(i * (M + 1) + j) * 5 + 2] = 0.0f;
+    GLint FBO;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &FBO);
+//
+    Renderer renderer(FBO);
+    renderer.createProgram(Renderer::foreground, "./shaders/camera.vert", "./shaders/camera.frag");
+    renderer.createProgram(Renderer::background, "./shaders/background.vert", "./shaders/background.frag");
+    renderer.createProgram(Renderer::update, "./shaders/update.vert", "./shaders/update.frag");
+    renderer.createProgram(Renderer::resolve, "./shaders/resolve.vert", "./shaders/resolve.frag");
+    renderer.createFramebuffers(SCR_WIDTH, SCR_HEIGHT);
+//
+//    renderer.loadBackground("./data/scene_dense_mesh_refine_texture.ply", "./data/scene_dense_mesh_refine_texture.png");
+    renderer.loadForegroundFile("./data/para_lab.json", M, N);
 
-            vertices[(i * (M + 1) + j) * 5 + 3] = 1.0 / M * j;
-            vertices[(i * (M + 1) + j) * 5 + 4] = 1.0 / N * i;
-        }
-    }
-
-    unsigned int *indices = new unsigned int[3 * N * M * 2];
-
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < M; ++j) {
-            indices[(i * M + j) * 6 + 0] = i * (M + 1) + j;
-            indices[(i * M + j) * 6 + 1] = i * (M + 1) + j + 1;
-            indices[(i * M + j) * 6 + 2] = (i + 1) * (M + 1) + j + 1;
-            indices[(i * M + j) * 6 + 3] = i * (M + 1) + j;
-            indices[(i * M + j) * 6 + 4] = (i + 1) * (M + 1) + j;
-            indices[(i * M + j) * 6 + 5] = (i + 1) * (M + 1) + j + 1;
-        }
-    }
-
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 5 * (M + 1) * (N + 1), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * M * N * 3 * 2, indices, GL_STATIC_DRAW);
-
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
-    glEnableVertexAttribArray(0);
-    // texture coord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
     int width, height, nrChannels;
     unsigned char *data;
     width = 384;
     height = 640;
 
-    unsigned int rgb_texture[5], depth_texture[5], mask_texture[5];
-    glm::mat4 K_inv_list[5];
-    glm::mat4 R_inv_list[5];
-
-    std::string path = "./data/";
-
-    for (int i = 0; i < 5; ++i) {
-        glGenTextures(1, &rgb_texture[i]);
-        glBindTexture(GL_TEXTURE_2D, rgb_texture[i]);
-        // set the texture wrapping parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        // set texture filtering parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        // load image, create texture and generate mipmaps
-        int width, height, nrChannels;
-        unsigned char *data = stbi_load((path + std::to_string(i + 1) + ".png").c_str(), &width,
-                                        &height,
-                                        &nrChannels, 0);
-        if (data) {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-        } else {
-            std::cout << "Failed to load texture" << std::endl;
-        }
-        stbi_image_free(data);
-
-        glGenTextures(1, &depth_texture[i]);
-        glBindTexture(GL_TEXTURE_2D, depth_texture[i]);
-        // set the texture wrapping parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        // set texture filtering parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        data = reinterpret_cast<unsigned char *>(new float[640 * 384]);
-        width = 384;
-        height = 640;
-        FILE *f = fopen((path + std::to_string(i + 1) + ".depth2").c_str(), "rb");
-        fread(data, 640 * 384 * sizeof(float), 1, f);
-        fclose(f);
-
-//        memset(data, 0, 640 * 384 * sizeof(float));
-
-//    for (int i = 160; i < 320; ++i) {
-//        for (int j = 64; j < 192; ++j) {
-//            ((float *) data)[i * 384 + j] = ((j - 64) / 128.0 / 2.0 + (i - 160) / 160.0 / 2.0)/10.0;
-//        }
-//    }
-        // load image, create texture and generate mipmaps
-//    data = stbi_load(std::string("resources/textures/awesomeface.png").c_str(), &width, &height, &nrChannels, 0);
-        if (data) {
-            // note that the awesomeface.png has transparency and thus an alpha channel, so make sure to tell OpenGL the data type is of GL_RGBA
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RED, GL_FLOAT, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-        } else {
-            std::cout << "Failed to load texture" << std::endl;
-        }
-//    stbi_image_free(data);
-
-        glGenTextures(1, &mask_texture[i]);
-        glBindTexture(GL_TEXTURE_2D, mask_texture[i]);
-        // set the texture wrapping parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        // set texture filtering parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        width = 384;
-        height = 640;
-        f = fopen((path + std::to_string(i + 1) + ".mask").c_str(), "rb");
-        fread(data, 640 * 384 * sizeof(unsigned char), 1, f);
-        fclose(f);
-
-//        memset(data, 0, 640 * 384 * sizeof(float));
-
-//    for (int i = 160; i < 320; ++i) {
-//        for (int j = 64; j < 192; ++j) {
-//            ((float *) data)[i * 384 + j] = ((j - 64) / 128.0 / 2.0 + (i - 160) / 160.0 / 2.0)/10.0;
-//        }
-//    }
-        // load image, create texture and generate mipmaps
-//    data = stbi_load(std::string("resources/textures/awesomeface.png").c_str(), &width, &height, &nrChannels, 0);
-        if (data) {
-            // note that the awesomeface.png has transparency and thus an alpha channel, so make sure to tell OpenGL the data type is of GL_RGBA
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-        } else {
-            std::cout << "Failed to load texture" << std::endl;
-        }
-        delete[] data;
-
-        float *para = new float[16];
-        f = fopen((path + std::to_string(i + 1) + ".intr").c_str(), "rb");
-        fread(para, 4 * sizeof(float), 1, f);
-        fclose(f);
-
-        K_inv_list[i] = glm::mat4(1);
-        K_inv_list[i][0][0] = 1 / para[0];
-        K_inv_list[i][1][1] = 1 / para[1];
-        K_inv_list[i][0][2] = -para[2] / para[0];
-        K_inv_list[i][1][2] = -para[3] / para[1];
-
-
-        f = fopen((path + std::to_string(i + 1) + ".extr").c_str(), "rb");
-        fread(para, 16 * sizeof(float), 1, f);
-        fclose(f);
-
-        R_inv_list[i] = glm::mat4(1);
-
-        for (int j = 0; j < 16; ++j)
-            R_inv_list[i][j / 4][j % 4] = para[j];
-
-        cout << K_inv_list[i][0][0] << " " << K_inv_list[i][0][1] << " " << K_inv_list[i][0][2] << " " << K_inv_list[i][0][3] << endl;
-        cout << K_inv_list[i][1][0] << " " << K_inv_list[i][1][1] << " " << K_inv_list[i][1][2] << " " << K_inv_list[i][1][3] << endl;
-        cout << K_inv_list[i][2][0] << " " << K_inv_list[i][2][1] << " " << K_inv_list[i][2][2] << " " << K_inv_list[i][2][3] << endl;
-        cout << K_inv_list[i][3][0] << " " << K_inv_list[i][3][1] << " " << K_inv_list[i][3][2] << " " << K_inv_list[i][3][3] << endl;
-        cout << R_inv_list[i][0][0] << " " << R_inv_list[i][0][1] << " " << R_inv_list[i][0][2] << " " << R_inv_list[i][0][3] << endl;
-        cout << R_inv_list[i][1][0] << " " << R_inv_list[i][1][1] << " " << R_inv_list[i][1][2] << " " << R_inv_list[i][1][3] << endl;
-        cout << R_inv_list[i][2][0] << " " << R_inv_list[i][2][1] << " " << R_inv_list[i][2][2] << " " << R_inv_list[i][2][3] << endl;
-        cout << R_inv_list[i][3][0] << " " << R_inv_list[i][3][1] << " " << R_inv_list[i][3][2] << " " << R_inv_list[i][3][3] << endl;
-        cout << endl;
-
-        delete[] para;
-    }
-
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
     // -------------------------------------------------------------------------------------------
-    ourShader.use();
-    ourShader.setInt("texture1", 0);
-    ourShader.setInt("texture2", 1);
-    ourShader.setInt("texture3", 2);
+    renderer.foregroundProgram->use();
+    renderer.foregroundProgram->setInt("rgb", 0);
+    renderer.foregroundProgram->setInt("depth", 1);
+    renderer.foregroundProgram->setInt("mask", 2);
+    {
+        string path = "./data/";
+        for (int i = 0; i < renderer.num_camera; ++i) {
+            int nrChannels;
+            unsigned char *rgb = stbi_load((path + std::to_string(i + 1) + ".png").c_str(), &renderer.widths[i],
+                                           &renderer.heights[i],
+                                           &nrChannels, 0);
+            renderer.widths[i] = 384;
+            renderer.heights[i] = 640;
 
+            float *depth = new float[renderer.widths[i] * renderer.heights[i]];
+            FILE *f = fopen((path + std::to_string(i + 1) + ".depth2").c_str(), "rb");
+            fread(depth, renderer.widths[i] * renderer.heights[i] * sizeof(float), 1, f);
+            fclose(f);
 
+            unsigned char *mask = new unsigned char[renderer.widths[i] * renderer.heights[i]];
+            f = fopen((path + std::to_string(i + 1) + ".mask").c_str(), "rb");
+            fread(mask, 640 * 384 * sizeof(unsigned char), 1, f);
+            fclose(f);
+
+            renderer.loadForegroundTexture(rgb, depth, mask, i);
+
+            stbi_image_free(rgb);
+            delete[] depth;
+            delete[] mask;
+        }
+    }
+    if (0)
+    {
+        string path = "./data/";
+        for (int i = 0; i < renderer.num_camera; ++i) {
+            int nrChannels;
+            unsigned char *rgb = stbi_load(("/data/GoPro/videos/teaRoom/sequence/video/" + std::to_string(i + 1) + "-" +
+                                            std::to_string(i + 1) + ".png").c_str(), &renderer.widths[i],
+                                           &renderer.heights[i],
+                                           &nrChannels, 0);
+//            unsigned char *rgb = stbi_load((path + std::to_string(i + 1) + ".png").c_str(), &renderer.widths[i],
+//                                           &renderer.heights[i],
+//                                           &nrChannels, 0);
+            renderer.loadForegroundTexture(rgb, 0, 0, i);
+
+            renderer.widths[i] = 384;
+            renderer.heights[i] = 640;
+            float *depth = new float[renderer.widths[i] * renderer.heights[i]];
+            FILE *f = fopen((path + std::to_string(i + 1) + ".depth2").c_str(), "rb");
+            fread(depth, renderer.widths[i] * renderer.heights[i] * sizeof(float), 1, f);
+            fclose(f);
+            renderer.loadForegroundTexture(0, depth, 0, i);
+
+            renderer.widths[i] = 384;
+            renderer.heights[i] = 640;
+
+            unsigned char *mask;
+            mask= stbi_load(
+                    ("/data/GoPro/videos/teaRoom/sequence/mask/" + std::to_string(i + 1) + "-" + std::to_string(i + 1) +
+                     ".png").c_str(), &renderer.widths[i],
+                    &renderer.heights[i],
+                    &nrChannels, 0);
+
+//            renderer.widths[i] = 384;
+//            renderer.heights[i] = 640;
+//            mask = reinterpret_cast<unsigned char *>(new float[640 * 384]);
+//            f = fopen((path + std::to_string(i + 1) + ".mask").c_str(), "rb");
+//            fread(mask, 640 * 384 * sizeof(unsigned char), 1, f);
+//            fclose(f);
+
+            renderer.loadForegroundTexture(0, 0, mask, i);
+
+            stbi_image_free(rgb);
+            delete[] depth;
+            delete[] mask;
+        }
+    }
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window)) {
@@ -341,80 +246,27 @@ int main() {
         // input
         // -----
         processInput(window);
-
-        glPolygonMode(GL_FRONT_AND_BACK, show_type);
         glPointSize(pointSize);
-        // render
-        // ------
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glfwSetInputMode(window, GLFW_CURSOR, cursor_type);
 
-        // activate shader
-        ourShader.use();
 
         // pass projection matrix to shader (note that in this case it could change every frame)
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) SCR_WIDTH / (float) SCR_HEIGHT,
                                                 0.1f,
                                                 100.0f);
-        ourShader.setMat4("projection", projection);
-
-        // camera/view transformation
         glm::mat4 view = camera.GetViewMatrix();
-        ourShader.setMat4("view", view);
 
-        for (int i = 0; i < 5; ++i) {
-            if (!cam_select[i])
-                continue;
-            // bind textures on corresponding texture units
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, rgb_texture[i]);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, depth_texture[i]);
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, mask_texture[i]);
-
-            glm::mat4 K_inv = K_inv_list[i];
-            glm::mat4 R_inv = R_inv_list[i];
-            ourShader.setMat4("K_inv", glm::transpose(K_inv));
-            ourShader.setMat4("R_inv", glm::transpose(R_inv));
-            ourShader.setFloat("width", width);
-            ourShader.setFloat("height", height);
-
-            // render boxes
-            glBindVertexArray(VAO);
-//        for (unsigned int i = 0; i < 10; i++) {
-//            // calculate the model matrix for each object and pass it to shader before drawing
-//            glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-//            model = glm::translate(model, cubePositions[i]);
-//            float angle = 20.0f * i;
-//            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-//            ourShader.setMat4("model", model);
-//
-//            glDrawArrays(GL_TRIANGLES, 0, 36);
-//        }
-
-            glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-            model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-            float angle = 0.f;
-            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-//        model = glm::rotate(model, glm::radians(angle), glm::vec3(0.0f, 0.0f, 0.0f));
-            ourShader.setMat4("model", model);
-//            glDrawElements(GL_TRIANGLES, 6 * N * M, GL_UNSIGNED_INT, 0);
-//            model = glm::translate(model, glm::vec3(-2.0f + i, 0.0f, 0.0f));
-            ourShader.setMat4("model", model);
-            glDrawElements(GL_TRIANGLES, 6 * N * M, GL_UNSIGNED_INT, 0);
-        }
+        renderer.setView(projection, view);
+        renderer.clearBuffer();
+//        renderer.renderBackground(show_type);
+        renderer.renderForegroundFile(show_type, cam_select);
+        renderer.renderBuffer();
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------

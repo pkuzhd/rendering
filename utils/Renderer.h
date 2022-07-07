@@ -11,6 +11,12 @@
 
 class Renderer {
 public:
+    int num_camera;
+    glm::mat4 *K_invs;
+    glm::mat4 *R_invs;
+    int *widths, *heights;
+    int M, N;
+
     GLint FBO;
 
     GLuint cameraFBO;
@@ -28,8 +34,12 @@ public:
 
     GLuint foregroundVBO;
     GLuint foregroundVAO;
+    GLuint foregroundEBO;
 
     GLuint background_texture;
+    GLuint *rgb_textures;
+    GLuint *depth_textures;
+    GLuint *mask_textures;
 
     double *faces = nullptr;
     int num_face;
@@ -42,12 +52,12 @@ public:
     };
 
     Shader *foregroundProgram = nullptr;
-    Shader *backgroundProgram= nullptr;
-    Shader *updateProgram= nullptr;
-    Shader *resolveProgram= nullptr;
+    Shader *backgroundProgram = nullptr;
+    Shader *updateProgram = nullptr;
+    Shader *resolveProgram = nullptr;
 
 
-    Renderer(GLuint FBO);
+    Renderer(GLuint FBO, int num_camera = 5);
 
     ~Renderer();
 
@@ -57,7 +67,9 @@ public:
 
     void loadForegroundMesh(std::string mesh_file);
 
-    void loadForeground();
+    void loadForegroundFile(std::string path, int M, int N);
+
+    void loadForegroundTexture(void *rgb, void *depth, void *mask, int cam_id, int width=-1, int height=-1);
 
     void clearBuffer();
 
@@ -65,7 +77,7 @@ public:
 
     void renderForegroundMesh(GLuint show_type, int *cam_select);
 
-    void renderForeground(GLuint show_type);
+    void renderForegroundFile(GLuint show_type, int *cam_select);
 
     void renderBuffer();
 

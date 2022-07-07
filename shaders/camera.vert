@@ -14,14 +14,12 @@ uniform mat4 R_inv;
 uniform float width;
 uniform float height;
 
-uniform sampler2D texture1;
-uniform sampler2D texture2;
-uniform sampler2D texture3;
+uniform sampler2D depth;
 
 void main()
 {
-    float depth = texture(texture2, aTexCoord).r;
-
+    float depth = texture(depth, aTexCoord).r;
+//    depth = 1.0f;
     vec2 uv = vec2(aPos.x * width, aPos.y * height);
     vec4 Xc = K_inv * vec4(uv, 1.0f, 1.0f);
     vec4 Xw = R_inv * vec4(Xc.xyz * depth, 1.0f);

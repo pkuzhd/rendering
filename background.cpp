@@ -112,7 +112,7 @@ int main() {
     glfwSetKeyCallback(window, key_callback);
 
     // tell GLFW to capture our mouse
-//    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -131,13 +131,14 @@ int main() {
     renderer.createProgram(Renderer::resolve, "./shaders/resolve.vert", "./shaders/resolve.frag");
     renderer.createFramebuffers(SCR_WIDTH, SCR_HEIGHT);
 
-    renderer.loadBackground("./data/scene_dense_mesh_refine_texture.ply", "./data/scene_dense_mesh_refine_texture.png");
+//    renderer.loadBackground("./data/scene_dense_mesh_refine_texture.ply", "./data/scene_dense_mesh_refine_texture.png");
+//    renderer.loadBackground("/data/colmapTest/backgroundPly/bc5/scene_dense_mesh_refine_texture.ply",
+//                            "/data/colmapTest/backgroundPly/bc5/scene_dense_mesh_refine_texture.png");
+    renderer.loadBackground("/data/colmapTest/backgroundPly/bc17/scene_dense_mesh_refine_texture.ply",
+                            "/data/colmapTest/backgroundPly/bc17/scene_dense_mesh_refine_texture.png");
+//    renderer.loadBackground("/data/colmapTest/backgroundPly/bccalibrations/scene_dense_mesh_refine_texture.ply",
+//                            "/data/colmapTest/backgroundPly/bccalibrations/scene_dense_mesh_refine_texture.png");
     renderer.loadForegroundMesh("./data/xyzrgb");
-
-
-    glm::vec3 cubePositions[] = {
-            glm::vec3(0.0f, 0.0f, 0.0f),
-    };
 
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
     // -------------------------------------------------------------------------------------------
