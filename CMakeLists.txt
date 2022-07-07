@@ -40,13 +40,16 @@ target_link_libraries(
 target_link_libraries(
         point
         glfw
+        jsoncpp
 )
 
 target_link_libraries(
         blend
         glfw
+        jsoncpp
 )
 target_link_libraries(
         background
         glfw
+        jsoncpp
 )

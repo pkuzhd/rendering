@@ -48,8 +48,8 @@ bool firstMouse = true;
 float deltaTime = 0.0f;    // time between current frame and last frame
 float lastFrame = 0.0f;
 
-#define N 640
-#define M 384
+#define N 1920
+#define M 1080
 
 float w = 384.0f;
 float h = 640.0f;
@@ -146,7 +146,7 @@ int main() {
     renderer.createFramebuffers(SCR_WIDTH, SCR_HEIGHT);
 //
 //    renderer.loadBackground("./data/scene_dense_mesh_refine_texture.ply", "./data/scene_dense_mesh_refine_texture.png");
-    renderer.loadForegroundFile("./data/para_lab.json", M, N);
+    renderer.loadForegroundFile("./data/para.json", M, N);
 
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
@@ -161,7 +161,8 @@ int main() {
     renderer.foregroundProgram->setInt("rgb", 0);
     renderer.foregroundProgram->setInt("depth", 1);
     renderer.foregroundProgram->setInt("mask", 2);
-    {
+
+    if (0) {
         string path = "./data/";
         for (int i = 0; i < renderer.num_camera; ++i) {
             int nrChannels;
@@ -188,44 +189,40 @@ int main() {
             delete[] mask;
         }
     }
-    if (0)
+
     {
         string path = "./data/";
         for (int i = 0; i < renderer.num_camera; ++i) {
             int nrChannels;
             unsigned char *rgb = stbi_load(("/data/GoPro/videos/teaRoom/sequence/video/" + std::to_string(i + 1) + "-" +
-                                            std::to_string(i + 1) + ".png").c_str(), &renderer.widths[i],
+                                            std::to_string(1) + ".png").c_str(), &renderer.widths[i],
                                            &renderer.heights[i],
                                            &nrChannels, 0);
-//            unsigned char *rgb = stbi_load((path + std::to_string(i + 1) + ".png").c_str(), &renderer.widths[i],
-//                                           &renderer.heights[i],
-//                                           &nrChannels, 0);
             renderer.loadForegroundTexture(rgb, 0, 0, i);
 
-            renderer.widths[i] = 384;
-            renderer.heights[i] = 640;
-            float *depth = new float[renderer.widths[i] * renderer.heights[i]];
-            FILE *f = fopen((path + std::to_string(i + 1) + ".depth2").c_str(), "rb");
-            fread(depth, renderer.widths[i] * renderer.heights[i] * sizeof(float), 1, f);
-            fclose(f);
-            renderer.loadForegroundTexture(0, depth, 0, i);
 
-            renderer.widths[i] = 384;
-            renderer.heights[i] = 640;
+            int width, height;
+            width = 1600;
+            height = 896;
+            FILE *f= fopen(("/data/GoPro/videos/teaRoom/sequence/depth/0001/000" + std::to_string(i + 1) + ".pfm").c_str(), "rb");
+//            ifstream depth_pfm("/data/GoPro/videos/teaRoom/sequence/depth/0001/000" + std::to_string(i + 1) + ".pfm");
+//            depth_pfm >> tmp >> width >> height >> t1 >> t2;
+            float *depth = new float[width * height];
+            fread(depth, 22, 1, f);
+            fread(depth, width * height * sizeof(float), 1, f);
+            fclose(f);
+//            int ret = depth_pfm.readsome(reinterpret_cast<char *>(depth), width * height * sizeof(float));
+//            cout << ret << endl;
+//            depth_pfm.close();
+
+            renderer.loadForegroundTexture(0, depth, 0, i, width, height);
 
             unsigned char *mask;
-            mask= stbi_load(
-                    ("/data/GoPro/videos/teaRoom/sequence/mask/" + std::to_string(i + 1) + "-" + std::to_string(i + 1) +
+            mask = stbi_load(
+                    ("/data/GoPro/videos/teaRoom/sequence/mask/" + std::to_string(i + 1) + "-" + std::to_string(1) +
                      ".png").c_str(), &renderer.widths[i],
                     &renderer.heights[i],
                     &nrChannels, 0);
-
-//            renderer.widths[i] = 384;
-//            renderer.heights[i] = 640;
-//            mask = reinterpret_cast<unsigned char *>(new float[640 * 384]);
-//            f = fopen((path + std::to_string(i + 1) + ".mask").c_str(), "rb");
-//            fread(mask, 640 * 384 * sizeof(unsigned char), 1, f);
-//            fclose(f);
 
             renderer.loadForegroundTexture(0, 0, mask, i);
 
