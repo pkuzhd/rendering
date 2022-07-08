@@ -473,6 +473,26 @@ void Renderer::renderForegroundMesh(GLuint show_type, int *cam_select) {
 
 
 void Renderer::renderForegroundFile(GLuint show_type, int *cam_select) {
+    glm::vec3 centers[5] = {
+            {0.        ,  0.        ,  0.        },
+            {0.13442005, -0.00617611,  0.00693867},
+            {0.26451552, -0.01547954,  0.01613046},
+            {0.39635817, -0.01958267,  0.02322004},
+            {0.53632535, -0.02177305,  0.05059797}
+    };
+
+    float centers_f[5][3] = {
+            {0.        ,  0.        ,  0.        },
+            {0.13442005, -0.00617611,  0.00693867},
+            {0.26451552, -0.01547954,  0.01613046},
+            {0.39635817, -0.01958267,  0.02322004},
+            {0.53632535, -0.02177305,  0.05059797}
+    };
+
+    foregroundProgram->use();
+    glUniform3fv(glGetUniformLocation(foregroundProgram->ID, "centers"), 5,
+                 reinterpret_cast<const GLfloat *>(centers_f));
+
     for (int i = 0; i < num_camera; ++i) {
         if (!cam_select[i])
             continue;
@@ -491,6 +511,8 @@ void Renderer::renderForegroundFile(GLuint show_type, int *cam_select) {
         glBindTexture(GL_TEXTURE_2D, mask_textures[i]);
 
         foregroundProgram->use();
+        foregroundProgram->setVec3("center", centers[i]);
+        foregroundProgram->setInt("idx", i);
         foregroundProgram->setMat4("K_inv", glm::transpose(K_invs[i]));
         foregroundProgram->setMat4("R_inv", glm::transpose(R_invs[i]));
         foregroundProgram->setFloat("width", widths[i]);

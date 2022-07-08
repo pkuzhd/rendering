@@ -43,7 +43,6 @@ void main()
 //        }
     }
     weight = 1 - angle / max_angle;
-//    weight = 1;
     TexCoord = aTexCoord;
 }
 

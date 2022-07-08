@@ -12,6 +12,10 @@ uniform mat4 projection;
 uniform mat4 K_inv;
 uniform mat4 R_inv;
 
+uniform vec3 centers[5];
+uniform vec3 center;
+uniform int idx;
+
 uniform float width;
 uniform float height;
 
@@ -20,16 +24,35 @@ uniform sampler2D depth;
 void main()
 {
     float d = texture(depth, vec2(aTexCoord.x, 1.0f-aTexCoord.y)).r;
-//    if (d>0.7)
-    weight = 1.0f;
-//    else
-//    weight = 0.0f;
-//    d = 1.0f;
     vec2 uv = vec2(aPos.x * width, aPos.y * height);
     vec4 Xc = K_inv * vec4(uv, 1.0f, 1.0f);
     vec4 Xw = R_inv * vec4(Xc.xyz * d, 1.0f);
+
+    vec4 Xv = view * vec4(Xw.x, -Xw.y, -Xw.z, Xw.w);
+    vec3 OV = Xv.xyz;
+    vec3 OC = (view * vec4(Xw.xyz - center, 0.0f)).xyz;
+    float angle = degrees(acos(max(-1.0f, min(1.0f, dot(OV, OC) / length(OV) / length(OC)))));
+    weight = 180 - angle;
+    weight = 180;
+    float angles[5];
+    float max_angle = 0.0f;
+    for (int i = 0; i < 5; ++i) {
+        //        if (i == idx)
+        //            continue;
+        OC = (view * vec4(Xw.xyz - centers[i], 0.0f)).xyz;
+        angles[i] = degrees(acos(max(-1.0f, min(1.0f, dot(OV, OC) / length(OV) / length(OC)))));
+        max_angle = max(max_angle, angles[i]);
+        //        if (angles[i] < angle) {
+        //            weight = 0.0;
+        //            break;
+        //        }
+    }
+    weight = 1 - angle / max_angle;
+
+
     gl_Position = projection * view * model * vec4(Xw.x, -Xw.y, -Xw.z, Xw.w);
     TexCoord = vec2(aTexCoord.x, aTexCoord.y);
+//    weight = 1.0f;
 
 }
 
