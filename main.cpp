@@ -4,8 +4,6 @@
 //#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#include <jsoncpp/json/json.h>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -55,8 +53,8 @@ bool firstMouse = true;
 float deltaTime = 0.0f;    // time between current frame and last frame
 float lastFrame = 0.0f;
 
-#define N 1920
-#define M 1080
+#define N 960
+#define M 540
 
 float w = 384.0f;
 float h = 640.0f;
@@ -64,15 +62,18 @@ float h = 640.0f;
 int pointSize = 1;
 int cam_select[5] = {1, 1, 1, 1, 1};
 glm::vec3 centers[5] = {
-        {0.        ,  0.        ,  0.        },
-        {0.13442005, -0.00617611,  0.00693867},
-        {0.26451552, -0.01547954,  0.01613046},
-        {0.39635817, -0.01958267,  0.02322004},
-        {0.53632535, -0.02177305,  0.05059797}
+        {0.,         0.,          0.},
+        {0.13442005, -0.00617611, 0.00693867},
+        {0.26451552, -0.01547954, 0.01613046},
+        {0.39635817, -0.01958267, 0.02322004},
+        {0.53632535, -0.02177305, 0.05059797}
 };
 
 GLuint show_type = GL_FILL;
-GLuint cursor_type = GLFW_CURSOR_DISABLED;
+GLuint cursor_type = GLFW_CURSOR_NORMAL;
+
+bool pause = false;
+bool keyleft = false, keyright = false;
 
 void key_callback(GLFWwindow *window, const int key, const int s, const int action, const int mods) {
     if (action == GLFW_RELEASE)
@@ -90,6 +91,18 @@ void key_callback(GLFWwindow *window, const int key, const int s, const int acti
             pointSize = std::min(10, pointSize + 1);
         if (key == GLFW_KEY_COMMA)
             cursor_type = cursor_type == GLFW_CURSOR_DISABLED ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
+        if (key == GLFW_KEY_SPACE)
+            pause = !pause;
+        if (key == GLFW_KEY_LEFT)
+            keyleft = true;
+        if (key == GLFW_KEY_RIGHT)
+            keyright = true;
+    }
+    if (action == GLFW_REPEAT) {
+        if (key == GLFW_KEY_LEFT)
+            keyleft = true;
+        if (key == GLFW_KEY_RIGHT)
+            keyright = true;
     }
 }
 
@@ -120,7 +133,7 @@ int main() {
     glfwSetKeyCallback(window, key_callback);
 
     // tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, cursor_type);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -188,24 +201,31 @@ int main() {
             delete[] mask;
         }
     }
+    void *rgbs[100][5];
+    void *depths[100][5];
+    void *masks[100][5];
 
-    {
+    int framerate = 10;
+    int begin = 101;
+    int step = 50 / framerate;
+    int num_frame = 50;
+    for (int j = 0; j < num_frame; ++j) {
+        cout << j << endl;
         string path = "./data/";
         for (int i = 0; i < renderer.num_camera; ++i) {
             int nrChannels;
             unsigned char *rgb = stbi_load(("/data/GoPro/videos/teaRoom/sequence/video/" + std::to_string(i + 1) + "-" +
-                                            std::to_string(1) + ".png").c_str(), &renderer.widths[i],
+                                            std::to_string(j * step + begin) + ".png").c_str(), &renderer.widths[i],
                                            &renderer.heights[i],
                                            &nrChannels, 0);
-            renderer.loadForegroundTexture(rgb, 0, 0, i);
+//            renderer.loadForegroundTexture(rgb, 0, 0, i);
 
 
-            int width, height;
+            char filename[256];
+            sprintf(filename, "./data/sequence/depth/%04d/%04d.pfm", j * step + begin, i + 1);
             width = 1600;
             height = 896;
-            FILE *f= fopen(("/data/GoPro/videos/teaRoom/sequence/depth/0001/000" + std::to_string(i + 1) + ".pfm").c_str(), "rb");
-//            ifstream depth_pfm("/data/GoPro/videos/teaRoom/sequence/depth/0001/000" + std::to_string(i + 1) + ".pfm");
-//            depth_pfm >> tmp >> width >> height >> t1 >> t2;
+            FILE *f = fopen(filename, "rb");
             float *depth = new float[width * height];
             fread(depth, 22, 1, f);
             fread(depth, width * height * sizeof(float), 1, f);
@@ -214,37 +234,92 @@ int main() {
 //            cout << ret << endl;
 //            depth_pfm.close();
 
-            renderer.loadForegroundTexture(0, depth, 0, i, width, height);
+//            renderer.loadForegroundTexture(0, depth, 0, i, width, height);
 
             unsigned char *mask;
             mask = stbi_load(
-                    ("/data/GoPro/videos/teaRoom/sequence/mask/" + std::to_string(i + 1) + "-" + std::to_string(1) +
+                    ("/data/GoPro/videos/teaRoom/sequence/mask/" + std::to_string(i + 1) + "-" +
+                     std::to_string(j * step + begin) +
                      ".png").c_str(), &renderer.widths[i],
                     &renderer.heights[i],
                     &nrChannels, 0);
 
-            renderer.loadForegroundTexture(0, 0, mask, i);
-
-            stbi_image_free(rgb);
-            delete[] depth;
-            delete[] mask;
+//            renderer.loadForegroundTexture(0, 0, mask, i);
+            rgbs[j][i] = rgb;
+            depths[j][i] = depth;
+            masks[j][i] = mask;
+//            stbi_image_free(rgb);
+//            delete[] depth;
+//            delete[] mask;
         }
     }
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
         // --------------------
+        static float start_time = 0.0f;
+        static int start_frame_id = 0;
+
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+
+        int frame_id = (currentFrame - start_time) * framerate;
+        cout << frame_id << " " << frame_id % num_frame << endl;
+
+        frame_id = (frame_id + start_frame_id) % num_frame;
+        static bool is_pause = false;
+        if (pause) {
+            if (!is_pause) {
+                is_pause = true;
+                start_frame_id = frame_id;
+            }
+            if (keyleft) {
+                keyleft = false;
+                start_frame_id = (start_frame_id - 1 + num_frame) % num_frame;
+                for (int i = 0; i < 5; ++i) {
+                    if (!cam_select[i])
+                        continue;
+                    renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
+                    renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i, width, height);
+                    renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
+                }
+            }
+            if (keyright) {
+                keyright = false;
+                start_frame_id = (start_frame_id + 1) % num_frame;
+                for (int i = 0; i < 5; ++i) {
+                    if (!cam_select[i])
+                        continue;
+                    renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
+                    renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i, width, height);
+                    renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
+                }
+            }
+        } else {
+            keyleft = false;
+            keyright = false;
+            if (is_pause) {
+                is_pause = false;
+                start_time = currentFrame;
+            }
+            for (int i = 0; i < 5; ++i) {
+                if (!cam_select[i])
+                    continue;
+                renderer.loadForegroundTexture(rgbs[frame_id][i], 0, 0, i);
+                renderer.loadForegroundTexture(0, depths[frame_id][i], 0, i, width, height);
+                renderer.loadForegroundTexture(0, 0, masks[frame_id][i], i);
+            }
+        }
+
 
         // input
         // -----
         processInput(window);
         glPointSize(pointSize);
         glfwSetInputMode(window, GLFW_CURSOR, cursor_type);
-
 
         // pass projection matrix to shader (note that in this case it could change every frame)
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) SCR_WIDTH / (float) SCR_HEIGHT,

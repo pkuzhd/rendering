@@ -3,6 +3,7 @@ out vec4 FragColor;
 
 in vec2 TexCoord;
 in float weight;
+in float flag;
 
 uniform float width;
 uniform float height;
@@ -22,6 +23,8 @@ void main()
 //    vec2 right = vec2(3.0f / width, 0.0f);
     float threshold = 1.0;
     if (texture(mask, TexCoord).r < 0.5f)
+    discard;
+    if (flag == 0)
     discard;
 //    if (texture(depth, TexCoord).r < 0.0f)
 //    discard;
