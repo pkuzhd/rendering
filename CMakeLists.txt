@@ -6,9 +6,24 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 14)
 find_package(glfw3)
 find_package(jsoncpp)
+find_package(OpenCV)
+set(OPENCV_COMPONENTS
+        opencv_core
+        opencv_imgproc
+        opencv_imgcodecs
+        opencv_highgui
+        opencv_objdetect
+        opencv_video)
+
 
 add_executable(rendering
         main.cpp
+        glad.c
+        ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
+        utils/Renderer.cpp
+        )
+add_executable(test
+        test.cpp
         glad.c
         ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
         utils/Renderer.cpp
@@ -52,4 +67,12 @@ target_link_libraries(
         background
         glfw
         jsoncpp
+)
+
+target_link_libraries(
+        test
+        glfw
+        jsoncpp
+        ${OPENCV_COMPONENTS}
+        ${OpenCV_LIBS}
 )

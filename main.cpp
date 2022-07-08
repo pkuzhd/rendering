@@ -20,6 +20,13 @@
 #include "ply/plyUtils.h"
 #include "utils/Renderer.h"
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/imgproc/types_c.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+
 using std::cout;
 using std::endl;
 using std::string;
