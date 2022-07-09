@@ -208,7 +208,7 @@ int main() {
     int framerate = 10;
     int begin = 101;
     int step = 50 / framerate;
-    int num_frame = 50;
+    int num_frame = 5;
     for (int j = 0; j < num_frame; ++j) {
         cout << j << endl;
         string path = "./data/";
@@ -254,6 +254,13 @@ int main() {
         }
     }
 
+
+    for (int i = 0; i < 5; ++i) {
+        renderer.loadForegroundTexture(rgbs[0][i], 0, 0, i);
+        renderer.loadForegroundTexture(0, depths[0][i], 0, i, width, height);
+        renderer.loadForegroundTexture(0, 0, masks[0][i], i);
+    }
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window)) {
@@ -271,6 +278,7 @@ int main() {
 
         frame_id = (frame_id + start_frame_id) % num_frame;
         static bool is_pause = false;
+        static int last_frame_id = 0;
         if (pause) {
             if (!is_pause) {
                 is_pause = true;
@@ -282,10 +290,13 @@ int main() {
                 for (int i = 0; i < 5; ++i) {
                     if (!cam_select[i])
                         continue;
-                    renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
-                    renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i, width, height);
-                    renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
+                    if (last_frame_id != start_frame_id) {
+                        renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
+                        renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i, width, height);
+                        renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
+                    }
                 }
+                last_frame_id = start_frame_id;
             }
             if (keyright) {
                 keyright = false;
@@ -293,10 +304,13 @@ int main() {
                 for (int i = 0; i < 5; ++i) {
                     if (!cam_select[i])
                         continue;
-                    renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
-                    renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i, width, height);
-                    renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
+                    if (last_frame_id != start_frame_id) {
+                        renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
+                        renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i, width, height);
+                        renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
+                    }
                 }
+                last_frame_id = start_frame_id;
             }
         } else {
             keyleft = false;
@@ -308,10 +322,13 @@ int main() {
             for (int i = 0; i < 5; ++i) {
                 if (!cam_select[i])
                     continue;
-                renderer.loadForegroundTexture(rgbs[frame_id][i], 0, 0, i);
-                renderer.loadForegroundTexture(0, depths[frame_id][i], 0, i, width, height);
-                renderer.loadForegroundTexture(0, 0, masks[frame_id][i], i);
+                if (last_frame_id != frame_id) {
+                    renderer.loadForegroundTexture(rgbs[frame_id][i], 0, 0, i);
+                    renderer.loadForegroundTexture(0, depths[frame_id][i], 0, i, width, height);
+                    renderer.loadForegroundTexture(0, 0, masks[frame_id][i], i);
+                }
             }
+            last_frame_id = frame_id;
         }
 
 

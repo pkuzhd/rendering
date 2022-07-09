@@ -325,7 +325,7 @@ void Renderer::loadForegroundTexture(void *rgb, void *depth, void *mask, int cam
                      height != -1 ? height : heights[cam_id],
                      0, GL_RGB,
                      GL_UNSIGNED_BYTE, rgb);
-        glGenerateMipmap(GL_TEXTURE_2D);
+//        glGenerateMipmap(GL_TEXTURE_2D);
     }
     if (depth) {
         glActiveTexture(GL_TEXTURE1);
@@ -334,7 +334,7 @@ void Renderer::loadForegroundTexture(void *rgb, void *depth, void *mask, int cam
                      width != -1 ? width : widths[cam_id],
                      height != -1 ? height : heights[cam_id],
                      0, GL_RED, GL_FLOAT, depth);
-        glGenerateMipmap(GL_TEXTURE_2D);
+//        glGenerateMipmap(GL_TEXTURE_2D);
     }
     if (mask) {
         glActiveTexture(GL_TEXTURE2);
@@ -343,7 +343,7 @@ void Renderer::loadForegroundTexture(void *rgb, void *depth, void *mask, int cam
                      width != -1 ? width : widths[cam_id],
                      height != -1 ? height : heights[cam_id],
                      0, GL_RED, GL_UNSIGNED_BYTE, mask);
-        glGenerateMipmap(GL_TEXTURE_2D);
+//        glGenerateMipmap(GL_TEXTURE_2D);
     }
 }
 

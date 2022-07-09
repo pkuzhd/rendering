@@ -3,7 +3,6 @@ out vec4 FragColor;
 
 in vec2 TexCoord;
 in float weight;
-in float flag;
 
 uniform float width;
 uniform float height;
@@ -17,14 +16,17 @@ void main()
 {
     FragColor = texture(rgb, TexCoord);
     FragColor.a = weight;
-//    vec2 up = vec2(0.0f, 3.0f / height);
+
+    float d = texture(depth, vec2(TexCoord.x, ((1.0f-TexCoord.y)*912-8)/896)).r;
+
+    //    vec2 up = vec2(0.0f, 3.0f / height);
 //    vec2 down = vec2(0.0f, -3.0f / height);
 //    vec2 left = vec2(-3.0f / width, 0.0f);
 //    vec2 right = vec2(3.0f / width, 0.0f);
     float threshold = 1.0;
-    if (texture(mask, TexCoord).r < 0.5f)
+    if (texture(mask, TexCoord).r < 0.8f)
     discard;
-    if (flag == 0)
+    if (d < 0.0f)
     discard;
 //    if (texture(depth, TexCoord).r < 0.0f)
 //    discard;

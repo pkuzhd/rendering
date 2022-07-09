@@ -4,7 +4,6 @@ layout (location = 1) in vec2 aTexCoord;
 
 out vec2 TexCoord;
 out float weight;
-out float flag;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -24,8 +23,10 @@ uniform sampler2D depth;
 
 void main()
 {
-    float d = texture(depth, vec2(aTexCoord.x, 1.0f-aTexCoord.y)).r;
-    TexCoord = vec2(aTexCoord.x, aTexCoord.y);
+    float d = texture(depth, vec2(aPos.x, ((1.0f-aPos.y)*912-8)/896)).r;
+    if (d < 0.0)
+    d = 100;
+    TexCoord = vec2(aPos.x, aPos.y);
 
     vec2 uv = vec2(aPos.x * width, aPos.y * height);
     vec4 Xc = K_inv * vec4(uv, 1.0f, 1.0f);
@@ -47,10 +48,5 @@ void main()
     weight = 1 - angle / max_angle;
 
     gl_Position = projection * view * model * vec4(Xw.x, -Xw.y, -Xw.z, Xw.w);
-
-    if (d <= 0.001)
-    flag = 0;
-    else
-    flag = 1;
 }
 
