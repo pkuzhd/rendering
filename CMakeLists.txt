@@ -21,52 +21,56 @@ add_executable(rendering
         glad.c
         ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
         utils/Renderer.cpp
-        )
+        utils/ThreadPool.cpp utils/ThreadPool.h)
 add_executable(test
         test.cpp
         glad.c
         ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
         utils/Renderer.cpp
-        )
+        utils/ThreadPool.cpp utils/ThreadPool.h)
 
 add_executable(point
         point.cpp
         glad.c
-        )
+        utils/ThreadPool.cpp utils/ThreadPool.h)
 add_executable(blend
         blend.cpp
         glad.c
-        )
+        utils/ThreadPool.cpp utils/ThreadPool.h)
 add_executable(background
         background.cpp
         glad.c
         ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
         utils/loadCamPara.cpp utils/Renderer.cpp
-        )
+        utils/ThreadPool.cpp utils/ThreadPool.h)
 
-add_executable(plyreader plyreader.cpp ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp)
+add_executable(plyreader plyreader.cpp ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp utils/ThreadPool.cpp utils/ThreadPool.h)
 
 
 target_link_libraries(
         rendering
         glfw
         jsoncpp
+        ${OPENCV_COMPONENTS}
 )
 target_link_libraries(
         point
         glfw
         jsoncpp
+        ${OPENCV_COMPONENTS}
 )
 
 target_link_libraries(
         blend
         glfw
         jsoncpp
+        ${OPENCV_COMPONENTS}
 )
 target_link_libraries(
         background
         glfw
         jsoncpp
+        ${OPENCV_COMPONENTS}
 )
 
 target_link_libraries(
@@ -74,5 +78,5 @@ target_link_libraries(
         glfw
         jsoncpp
         ${OPENCV_COMPONENTS}
-        ${OpenCV_LIBS}
+#        ${OpenCV_LIBS}
 )

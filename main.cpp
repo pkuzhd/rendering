@@ -13,10 +13,13 @@
 
 #include <iostream>
 #include <string>
+#include <thread>
+#include <chrono>
 
 #include "ply/PlyReader.h"
 #include "ply/plyUtils.h"
 #include "utils/Renderer.h"
+#include "utils/ThreadPool.h"
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/types_c.h>
@@ -174,33 +177,6 @@ int main() {
     renderer.foregroundProgram->setInt("depth", 1);
     renderer.foregroundProgram->setInt("mask", 2);
 
-    if (0) {
-        string path = "./data/";
-        for (int i = 0; i < renderer.num_camera; ++i) {
-            int nrChannels;
-            unsigned char *rgb = stbi_load((path + std::to_string(i + 1) + ".png").c_str(), &renderer.widths[i],
-                                           &renderer.heights[i],
-                                           &nrChannels, 0);
-            renderer.widths[i] = 384;
-            renderer.heights[i] = 640;
-
-            float *depth = new float[renderer.widths[i] * renderer.heights[i]];
-            FILE *f = fopen((path + std::to_string(i + 1) + ".depth2").c_str(), "rb");
-            fread(depth, renderer.widths[i] * renderer.heights[i] * sizeof(float), 1, f);
-            fclose(f);
-
-            unsigned char *mask = new unsigned char[renderer.widths[i] * renderer.heights[i]];
-            f = fopen((path + std::to_string(i + 1) + ".mask").c_str(), "rb");
-            fread(mask, 640 * 384 * sizeof(unsigned char), 1, f);
-            fclose(f);
-
-            renderer.loadForegroundTexture(rgb, depth, mask, i);
-
-            stbi_image_free(rgb);
-            delete[] depth;
-            delete[] mask;
-        }
-    }
     void *rgbs[100][5];
     void *depths[100][5];
     void *masks[100][5];
@@ -218,8 +194,6 @@ int main() {
                                             std::to_string(j * step + begin) + ".png").c_str(), &renderer.widths[i],
                                            &renderer.heights[i],
                                            &nrChannels, 0);
-//            renderer.loadForegroundTexture(rgb, 0, 0, i);
-
 
             char filename[256];
             sprintf(filename, "./data/sequence/depth/%04d/%04d.pfm", j * step + begin, i + 1);
@@ -230,11 +204,6 @@ int main() {
             fread(depth, 22, 1, f);
             fread(depth, width * height * sizeof(float), 1, f);
             fclose(f);
-//            int ret = depth_pfm.readsome(reinterpret_cast<char *>(depth), width * height * sizeof(float));
-//            cout << ret << endl;
-//            depth_pfm.close();
-
-//            renderer.loadForegroundTexture(0, depth, 0, i, width, height);
 
             unsigned char *mask;
             mask = stbi_load(
@@ -244,13 +213,9 @@ int main() {
                     &renderer.heights[i],
                     &nrChannels, 0);
 
-//            renderer.loadForegroundTexture(0, 0, mask, i);
             rgbs[j][i] = rgb;
             depths[j][i] = depth;
             masks[j][i] = mask;
-//            stbi_image_free(rgb);
-//            delete[] depth;
-//            delete[] mask;
         }
     }
 
