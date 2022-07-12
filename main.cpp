@@ -177,6 +177,10 @@ int main() {
     renderer.foregroundProgram->setInt("depth", 1);
     renderer.foregroundProgram->setInt("mask", 2);
 
+
+    int num_thread = 32;
+    ThreadPool threadPool(num_thread);
+
     void *rgbs[100][5];
     void *depths[100][5];
     void *masks[100][5];
@@ -185,39 +189,46 @@ int main() {
     int begin = 101;
     int step = 50 / framerate;
     int num_frame = 5;
-    for (int j = 0; j < num_frame; ++j) {
-        cout << j << endl;
-        string path = "./data/";
-        for (int i = 0; i < renderer.num_camera; ++i) {
-            int nrChannels;
-            unsigned char *rgb = stbi_load(("/data/GoPro/videos/teaRoom/sequence/video/" + std::to_string(i + 1) + "-" +
-                                            std::to_string(j * step + begin) + ".png").c_str(), &renderer.widths[i],
-                                           &renderer.heights[i],
-                                           &nrChannels, 0);
+    for (int k = 0; k < 32; ++k) {
+        threadPool.spawn(
+                [&](int k) {
+                    for (int j = k; j < num_frame; j += num_thread) {
+                        cout << j << endl;
+                        string path = "./data/";
+                        for (int i = 0; i < renderer.num_camera; ++i) {
+                            int nrChannels;
+                            unsigned char *rgb = stbi_load(
+                                    ("/data/GoPro/videos/teaRoom/sequence/video/" + std::to_string(i + 1) + "-" +
+                                     std::to_string(j * step + begin) + ".png").c_str(), &renderer.widths[i],
+                                    &renderer.heights[i],
+                                    &nrChannels, 0);
 
-            char filename[256];
-            sprintf(filename, "./data/sequence/depth/%04d/%04d.pfm", j * step + begin, i + 1);
-            width = 1600;
-            height = 896;
-            FILE *f = fopen(filename, "rb");
-            float *depth = new float[width * height];
-            fread(depth, 22, 1, f);
-            fread(depth, width * height * sizeof(float), 1, f);
-            fclose(f);
+                            char filename[256];
+                            sprintf(filename, "./data/sequence/depth/%04d/%04d.pfm", j * step + begin, i + 1);
+                            width = 1600;
+                            height = 896;
+                            FILE *f = fopen(filename, "rb");
+                            float *depth = new float[width * height];
+                            fread(depth, 22, 1, f);
+                            fread(depth, width * height * sizeof(float), 1, f);
+                            fclose(f);
 
-            unsigned char *mask;
-            mask = stbi_load(
-                    ("/data/GoPro/videos/teaRoom/sequence/mask/" + std::to_string(i + 1) + "-" +
-                     std::to_string(j * step + begin) +
-                     ".png").c_str(), &renderer.widths[i],
-                    &renderer.heights[i],
-                    &nrChannels, 0);
+                            unsigned char *mask;
+                            mask = stbi_load(
+                                    ("/data/GoPro/videos/teaRoom/sequence/mask/" + std::to_string(i + 1) + "-" +
+                                     std::to_string(j * step + begin) +
+                                     ".png").c_str(), &renderer.widths[i],
+                                    &renderer.heights[i],
+                                    &nrChannels, 0);
 
-            rgbs[j][i] = rgb;
-            depths[j][i] = depth;
-            masks[j][i] = mask;
-        }
+                            rgbs[j][i] = rgb;
+                            depths[j][i] = depth;
+                            masks[j][i] = mask;
+                        }
+                    }
+                }, k);
     }
+    threadPool.join();
 
 
     for (int i = 0; i < 5; ++i) {
