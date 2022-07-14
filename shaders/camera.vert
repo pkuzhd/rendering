@@ -45,7 +45,7 @@ void main()
         angles[i] = degrees(acos(max(-1.0f, min(1.0f, dot(OV, OC) / length(OV) / length(OC)))));
         max_angle = max(max_angle, angles[i]);
     }
-    weight = 1 - angle / max_angle;
+    weight = 1 - angle / max_angle + 0.001;
 
     gl_Position = projection * view * model * vec4(Xw.x, -Xw.y, -Xw.z, Xw.w);
 }

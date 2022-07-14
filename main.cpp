@@ -162,6 +162,8 @@ int main() {
     renderer.createFramebuffers(SCR_WIDTH, SCR_HEIGHT);
 //
 //    renderer.loadBackground("./data/scene_dense_mesh_refine_texture.ply", "./data/scene_dense_mesh_refine_texture.png");
+    renderer.loadBackground("/data/colmapTest/backgroundPly/bc5/scene_dense_mesh_refine_texture.ply",
+                            "/data/colmapTest/backgroundPly/bc5/scene_dense_mesh_refine_texture.png");
     renderer.loadForegroundFile("./data/para.json", M, N);
 
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -239,6 +241,15 @@ int main() {
         renderer.loadForegroundTexture(0, depths[0][i], 0, i, width, height);
         renderer.loadForegroundTexture(0, 0, masks[0][i], i);
     }
+
+    glm::mat4 model = {
+            0.997040, -0.014666, -0.075476, 4.976910,
+            -0.015422, -0.999836, -0.009449, -0.337819,
+            -0.075325, 0.010585, -0.997103, 0.265862,
+            0.000000, -0.000000, 0.000000, 1.000000
+    };
+    renderer.setModel(model);
+//    renderer.setModel(glm::mat4(1.0f));
 
     // render loop
     // -----------
@@ -325,7 +336,7 @@ int main() {
 
         renderer.setView(projection, view);
         renderer.clearBuffer();
-//        renderer.renderBackground(show_type);
+        renderer.renderBackground(show_type);
         renderer.renderForegroundFile(show_type, cam_select);
         renderer.renderBuffer();
 

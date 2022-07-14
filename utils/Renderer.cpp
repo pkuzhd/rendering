@@ -359,6 +359,7 @@ void Renderer::clearBuffer() {
 }
 
 void Renderer::renderBackground(GLuint show_type) {
+    glActiveTexture(GL_TEXTURE0);
     // clearSubframe
     glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -410,11 +411,15 @@ void Renderer::setView(glm::mat4 projection, glm::mat4 view) {
     backgroundProgram->use();
     backgroundProgram->setMat4("projection", projection);
     backgroundProgram->setMat4("view", view);
-    backgroundProgram->setMat4("model", glm::mat4(1.0f));
     foregroundProgram->use();
     foregroundProgram->setMat4("projection", projection);
     foregroundProgram->setMat4("view", view);
     foregroundProgram->setMat4("model", glm::mat4(1.0f));
+
+}
+void Renderer::setModel(glm::mat4 model) {
+    backgroundProgram->use();
+    backgroundProgram->setMat4("model", (glm::transpose(model)));
 }
 
 void Renderer::renderForegroundMesh(GLuint show_type, int *cam_select) {
