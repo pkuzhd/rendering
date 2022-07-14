@@ -14,7 +14,7 @@ uniform sampler2D mask;
 
 void main()
 {
-    FragColor = texture(rgb, TexCoord);
+    FragColor = texture(rgb, TexCoord).bgra;
     FragColor.a = weight;
 
     float d = texture(depth, vec2(TexCoord.x, ((1.0f-TexCoord.y)*912-8)/896)).r;

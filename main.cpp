@@ -20,6 +20,7 @@
 #include "ply/plyUtils.h"
 #include "utils/Renderer.h"
 #include "utils/ThreadPool.h"
+#include "utils/RGBDReceiver.h"
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/types_c.h>
@@ -166,7 +167,6 @@ int main() {
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
     int width, height, nrChannels;
-    unsigned char *data;
     width = 384;
     height = 640;
 
@@ -189,6 +189,27 @@ int main() {
     int begin = 101;
     int step = 50 / framerate;
     int num_frame = 5;
+
+    RGBDReceiver receiver;
+    receiver.open("./pipe_dir/pipe2");
+    RGBDData *data = nullptr;
+    for (int j = 0; j < 5; ++j) {
+        data = nullptr;
+        while (!data) {
+            data = receiver.getData();
+        };
+        for (int i = 0; i < renderer.num_camera; ++i) {
+            renderer.widths[i] = 3840;
+            renderer.heights[i] = 2160;
+            rgbs[j][i] = data->getImage(i);
+//            depths[j][i] = nullptr;
+            masks[j][i] = data->getMask(i);
+        }
+    }
+
+    width = 1600;
+    height = 896;
+
     for (int k = 0; k < 32; ++k) {
         threadPool.spawn(
                 [&](int k) {
@@ -196,34 +217,16 @@ int main() {
                         cout << j << endl;
                         string path = "./data/";
                         for (int i = 0; i < renderer.num_camera; ++i) {
-                            int nrChannels;
-                            unsigned char *rgb = stbi_load(
-                                    ("/data/GoPro/videos/teaRoom/sequence/video/" + std::to_string(i + 1) + "-" +
-                                     std::to_string(j * step + begin) + ".png").c_str(), &renderer.widths[i],
-                                    &renderer.heights[i],
-                                    &nrChannels, 0);
-
                             char filename[256];
-                            sprintf(filename, "./data/sequence/depth/%04d/%04d.pfm", j * step + begin, i + 1);
-                            width = 1600;
-                            height = 896;
+                            sprintf(filename, "/data/GoPro/videos/teaRoom/sequence/depth/%04d/%04d.pfm",
+                                    j * step + begin, i + 1);
                             FILE *f = fopen(filename, "rb");
                             float *depth = new float[width * height];
                             fread(depth, 22, 1, f);
                             fread(depth, width * height * sizeof(float), 1, f);
                             fclose(f);
 
-                            unsigned char *mask;
-                            mask = stbi_load(
-                                    ("/data/GoPro/videos/teaRoom/sequence/mask/" + std::to_string(i + 1) + "-" +
-                                     std::to_string(j * step + begin) +
-                                     ".png").c_str(), &renderer.widths[i],
-                                    &renderer.heights[i],
-                                    &nrChannels, 0);
-
-                            rgbs[j][i] = rgb;
                             depths[j][i] = depth;
-                            masks[j][i] = mask;
                         }
                     }
                 }, k);
