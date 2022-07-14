@@ -204,36 +204,36 @@ int main() {
             renderer.widths[i] = 3840;
             renderer.heights[i] = 2160;
             rgbs[j][i] = data->getImage(i);
-//            depths[j][i] = nullptr;
+            depths[j][i] = data->getDepth(i);
             masks[j][i] = data->getMask(i);
         }
     }
 
-    width = 1600;
-    height = 896;
+    width = 3840;
+    height = 2160;
 
-    for (int k = 0; k < 32; ++k) {
-        threadPool.spawn(
-                [&](int k) {
-                    for (int j = k; j < num_frame; j += num_thread) {
-                        cout << j << endl;
-                        string path = "./data/";
-                        for (int i = 0; i < renderer.num_camera; ++i) {
-                            char filename[256];
-                            sprintf(filename, "/data/GoPro/videos/teaRoom/sequence/depth/%04d/%04d.pfm",
-                                    j * step + begin, i + 1);
-                            FILE *f = fopen(filename, "rb");
-                            float *depth = new float[width * height];
-                            fread(depth, 22, 1, f);
-                            fread(depth, width * height * sizeof(float), 1, f);
-                            fclose(f);
-
-                            depths[j][i] = depth;
-                        }
-                    }
-                }, k);
-    }
-    threadPool.join();
+//    for (int k = 0; k < 32; ++k) {
+//        threadPool.spawn(
+//                [&](int k) {
+//                    for (int j = k; j < num_frame; j += num_thread) {
+//                        cout << j << endl;
+//                        string path = "./data/";
+//                        for (int i = 0; i < renderer.num_camera; ++i) {
+//                            char filename[256];
+//                            sprintf(filename, "/data/GoPro/videos/teaRoom/sequence/depth/%04d/%04d.pfm",
+//                                    j * step + begin, i + 1);
+//                            FILE *f = fopen(filename, "rb");
+//                            float *depth = new float[width * height];
+//                            fread(depth, 22, 1, f);
+//                            fread(depth, width * height * sizeof(float), 1, f);
+//                            fclose(f);
+//
+//                            depths[j][i] = depth;
+//                        }
+//                    }
+//                }, k);
+//    }
+//    threadPool.join();
 
 
     for (int i = 0; i < 5; ++i) {

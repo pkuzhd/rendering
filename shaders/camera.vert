@@ -23,7 +23,7 @@ uniform sampler2D depth;
 
 void main()
 {
-    float d = texture(depth, vec2(aPos.x, ((1.0f-aPos.y)*912-8)/896)).r;
+    float d = texture(depth, vec2(aPos.x, ((aPos.y)))).r;
 //    if (d < 0.0)
 //    d = 100;
     TexCoord = vec2(aPos.x, aPos.y);
