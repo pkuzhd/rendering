@@ -69,7 +69,7 @@ public:
 
     void loadForegroundFile(std::string path, int M, int N);
 
-    void loadForegroundTexture(void *rgb, void *depth, void *mask, int cam_id, int width=-1, int height=-1);
+    void loadForegroundTexture(void *rgb, void *depth, void *mask, int cam_id, int width = -1, int height = -1);
 
     void clearBuffer();
 
@@ -84,6 +84,8 @@ public:
     void createProgram(PROGRAM type, std::string vertexPath, std::string fragmentPath);
 
     void setView(glm::mat4 projection, glm::mat4 view);
+
+    void setModel(glm::mat4 model);
 
 };
 
