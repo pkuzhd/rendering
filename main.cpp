@@ -206,7 +206,7 @@ int main() {
                                     &nrChannels, 0);
 
                             char filename[256];
-                            sprintf(filename, "./data/sequence/depth/%04d/%04d.pfm", j * step + begin, i + 1);
+                            sprintf(filename, "/data/GoPro/videos/teaRoom/sequence/depth/%04d/%04d.pfm", j * step + begin, i + 1);
                             width = 1600;
                             height = 896;
                             FILE *f = fopen(filename, "rb");
