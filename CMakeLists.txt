@@ -26,6 +26,10 @@ add_executable(rendering
         ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
         utils/Renderer.cpp
         utils/ThreadPool.cpp utils/ThreadPool.h)
+
+add_executable(TestImage
+        TestImage.cpp
+        utils/ThreadPool.cpp utils/ThreadPool.h)
 add_executable(test
         test.cpp
         glad.c
@@ -54,6 +58,13 @@ add_executable(plyreader plyreader.cpp ply/PlyReader.cpp ply/system.cpp ply/plyU
 target_link_libraries(
         rendering
         glfw
+        jsoncpp
+        ${OPENCV_COMPONENTS}
+        TransLib
+        pthread
+)
+target_link_libraries(
+        TestImage
         jsoncpp
         ${OPENCV_COMPONENTS}
         TransLib

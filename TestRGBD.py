@@ -3,14 +3,19 @@ import os
 import numpy as np
 
 from utils.RGBDSender import RGBDData, RGBDSender
+from utils.ImageReceiver import ImageData, ImageReceiver
 
 sender = RGBDSender()
 sender.open("./pipe_dir/pipe2")
-# cv2.namedWindow("123", cv2.WINDOW_NORMAL)
-# cv2.resizeWindow("123", (960, 540))
+
+
+recv = ImageReceiver()
+recv.open("./pipe_dir/pipe1")
 
 for i in range(5):
-    imgs = [cv2.imread(f"/data/GoPro/videos/teaRoom/sequence/video/{j + 1}-{i * 5 + 101}.png") for j in range(5)]
+    data = recv.getData()
+    imgs = data.imgs
+    # imgs = [cv2.imread(f"/data/GoPro/videos/teaRoom/sequence/video/{j + 1}-{i * 5 + 101}.png") for j in range(5)]
     masks = [cv2.imread(f"/data/GoPro/videos/teaRoom/sequence/mask/{j + 1}-{i * 5 + 101}.png", cv2.IMREAD_GRAYSCALE) for
              j in range(5)]
     depths = []
