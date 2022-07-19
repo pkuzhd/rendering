@@ -3,6 +3,7 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aTexCoord;
 
 out vec2 TexCoord;
+out vec2 cropCoord;
 out float weight;
 
 uniform mat4 model;
@@ -18,19 +19,24 @@ uniform int idx;
 
 uniform float width;
 uniform float height;
+uniform float w_crop;
+uniform float h_crop;
+uniform float x_crop;
+uniform float y_crop;
 
 uniform sampler2D depth;
 
 void main()
 {
-    float d = texture(depth, vec2(aPos.x, ((aPos.y)))).r;
+    float d = texture(depth, vec2(aPos.x, aPos.y)).r;
 //    if (d < 0.0)
 //    d = 100;
-    TexCoord = vec2(aPos.x, aPos.y);
-
-    vec2 uv = vec2(aPos.x * width, aPos.y * height);
+    TexCoord = vec2((aPos.x * w_crop + x_crop) / width, (aPos.y * h_crop + y_crop) / height);
+    cropCoord = vec2(aPos.x, aPos.y);
+    vec2 uv = vec2((aPos.x * w_crop + x_crop) / width, (aPos.y * h_crop + y_crop) / height);
+//    vec2 uv = vec2(aPos.x, aPos.y);
     vec4 Xc = K_inv * vec4(uv, 1.0f, 1.0f);
-    vec4 Xw = R_inv * vec4(Xc.xyz*d, 1.0f);
+    vec4 Xw = R_inv * vec4(Xc.xyz * d, 1.0f);
 
     vec4 Xv = view * vec4(Xw.x, -Xw.y, -Xw.z, Xw.w);
     vec3 OV = Xv.xyz;
@@ -47,6 +53,7 @@ void main()
     }
     weight = 1 - angle / max_angle + 0.001;
 
+    weight = 1;
     gl_Position = projection * view * model * vec4(Xw.x, -Xw.y, -Xw.z, Xw.w);
 }
 

@@ -21,13 +21,8 @@
 #include "utils/Renderer.h"
 #include "utils/ThreadPool.h"
 #include "utils/RGBDReceiver.h"
+#include "utils/FileRGBDReceiver.h"
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgproc/types_c.h>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
 
 using std::cout;
 using std::endl;
@@ -168,10 +163,6 @@ int main() {
 
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
-    int width, height, nrChannels;
-    width = 384;
-    height = 640;
-
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
     // -------------------------------------------------------------------------------------------
     renderer.foregroundProgram->use();
@@ -192,53 +183,33 @@ int main() {
     int step = 50 / framerate;
     int num_frame = 5;
 
-    RGBDReceiver receiver;
-    receiver.open("./pipe_dir/pipe2");
+//    IRGBDReceiver *receiver = new RGBDReceiver();
+//    receiver->open("./pipe_dir/pipe2");
+    IRGBDReceiver *receiver = new FileRGBDReceiver();
+    receiver->open("/data/GoPro/videos/teaRoom/sequence/1080p/");
     RGBDData *data = nullptr;
     for (int j = 0; j < 5; ++j) {
         data = nullptr;
         while (!data) {
-            data = receiver.getData();
+            data = receiver->getData();
         };
         for (int i = 0; i < renderer.num_camera; ++i) {
-            renderer.widths[i] = 3840;
-            renderer.heights[i] = 2160;
+            renderer.widths[i] = data->w[i];
+            renderer.heights[i] = data->h[i];
+            renderer.w_crop[i] = data->w_crop[i];
+            renderer.h_crop[i] = data->h_crop[i];
+            renderer.x_crop[i] = data->x[i];
+            renderer.y_crop[i] = data->y[i];
             rgbs[j][i] = data->getImage(i);
             depths[j][i] = data->getDepth(i);
             masks[j][i] = data->getMask(i);
         }
     }
 
-    width = 3840;
-    height = 2160;
-
-//    for (int k = 0; k < 32; ++k) {
-//        threadPool.spawn(
-//                [&](int k) {
-//                    for (int j = k; j < num_frame; j += num_thread) {
-//                        cout << j << endl;
-//                        string path = "./data/";
-//                        for (int i = 0; i < renderer.num_camera; ++i) {
-//                            char filename[256];
-//                            sprintf(filename, "/data/GoPro/videos/teaRoom/sequence/depth/%04d/%04d.pfm",
-//                                    j * step + begin, i + 1);
-//                            FILE *f = fopen(filename, "rb");
-//                            float *depth = new float[width * height];
-//                            fread(depth, 22, 1, f);
-//                            fread(depth, width * height * sizeof(float), 1, f);
-//                            fclose(f);
-//
-//                            depths[j][i] = depth;
-//                        }
-//                    }
-//                }, k);
-//    }
-//    threadPool.join();
-
 
     for (int i = 0; i < 5; ++i) {
         renderer.loadForegroundTexture(rgbs[0][i], 0, 0, i);
-        renderer.loadForegroundTexture(0, depths[0][i], 0, i, width, height);
+        renderer.loadForegroundTexture(0, depths[0][i], 0, i);
         renderer.loadForegroundTexture(0, 0, masks[0][i], i);
     }
 
@@ -282,7 +253,7 @@ int main() {
                         continue;
                     if (last_frame_id != start_frame_id) {
                         renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
-                        renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i, width, height);
+                        renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i);
                         renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
                     }
                 }
@@ -296,7 +267,7 @@ int main() {
                         continue;
                     if (last_frame_id != start_frame_id) {
                         renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
-                        renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i, width, height);
+                        renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i);
                         renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
                     }
                 }
@@ -314,7 +285,7 @@ int main() {
                     continue;
                 if (last_frame_id != frame_id) {
                     renderer.loadForegroundTexture(rgbs[frame_id][i], 0, 0, i);
-                    renderer.loadForegroundTexture(0, depths[frame_id][i], 0, i, width, height);
+                    renderer.loadForegroundTexture(0, depths[frame_id][i], 0, i);
                     renderer.loadForegroundTexture(0, 0, masks[frame_id][i], i);
                 }
             }
@@ -336,7 +307,7 @@ int main() {
 
         renderer.setView(projection, view);
         renderer.clearBuffer();
-        renderer.renderBackground(show_type);
+//        renderer.renderBackground(show_type);
         renderer.renderForegroundFile(show_type, cam_select);
         renderer.renderBuffer();
 

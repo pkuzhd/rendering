@@ -17,8 +17,8 @@ set(OPENCV_COMPONENTS
         opencv_objdetect
         opencv_video)
 
-
-add_library(TransLib ../pipe_transmission/utils/ImageSender.cpp ../pipe_transmission/utils/RGBDReceiver.cpp)
+add_subdirectory(../pipe_transmission pipe_transmission)
+#add_library(TransLib ../pipe_transmission/utils/ImageSender.cpp ../pipe_transmission/utils/RGBDReceiver.cpp)
 
 add_executable(rendering
         main.cpp
@@ -59,7 +59,7 @@ target_link_libraries(
         rendering
         glfw
         jsoncpp
-        ${OPENCV_COMPONENTS}
+#        ${OPENCV_COMPONENTS}
         TransLib
         pthread
 )

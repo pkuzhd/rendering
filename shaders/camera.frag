@@ -2,6 +2,7 @@
 out vec4 FragColor;
 
 in vec2 TexCoord;
+in vec2 cropCoord;
 in float weight;
 
 uniform float width;
@@ -17,28 +18,11 @@ void main()
     FragColor = texture(rgb, TexCoord).bgra;
     FragColor.a = weight;
 
-    float d = texture(depth, vec2(TexCoord.x, ((1.0f-TexCoord.y)*912-8)/896)).r;
-
-    //    vec2 up = vec2(0.0f, 3.0f / height);
-//    vec2 down = vec2(0.0f, -3.0f / height);
-//    vec2 left = vec2(-3.0f / width, 0.0f);
-//    vec2 right = vec2(3.0f / width, 0.0f);
+    float d = texture(depth, vec2(cropCoord.x, cropCoord.y)).r;
     float threshold = 1.0;
-    if (texture(mask, TexCoord).r < 0.8f)
+    if (texture(mask, cropCoord).r < 0.8f)
     discard;
     if (d < 0.0f)
     discard;
-//    if (texture(depth, TexCoord).r < 0.0f)
-//    discard;
-//    if (
-//    texture(mask, TexCoord).r < threshold
-//    || texture(mask, TexCoord + up).r < threshold
-//    || texture(mask, TexCoord + down).r < threshold
-//    || texture(mask, TexCoord + left).r < threshold
-//    || texture(mask, TexCoord + right).r < threshold
-//    )
-//    discard;
-//    if (TexCoord.x < 0.3 && TexCoord.y < 0.6)
-//        discard;
 }
 

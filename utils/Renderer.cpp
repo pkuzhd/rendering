@@ -23,6 +23,11 @@ Renderer::Renderer(GLuint FBO, int num_camera) : FBO(FBO), num_camera(num_camera
     widths = new int[num_camera];
     heights = new int[num_camera];
 
+    w_crop = new int[num_camera];
+    h_crop = new int[num_camera];
+    x_crop = new int[num_camera];
+    y_crop = new int[num_camera];
+
     cameraFBO = cameraTexture = cameraDepth = 0;
     accumulateFBO = accumulateTexture = 0;
 
@@ -296,10 +301,10 @@ void Renderer::loadForegroundFile(std::string para_file, int _M, int _N) {
 
     for (int i = 0; i < num_camera; ++i) {
         float cx, cy, fx, fy;
-        cx = root[std::to_string(i + 1)]["K"][0][2].asFloat();
-        cy = root[std::to_string(i + 1)]["K"][1][2].asFloat();
-        fx = root[std::to_string(i + 1)]["K"][0][0].asFloat();
-        fy = root[std::to_string(i + 1)]["K"][1][1].asFloat();
+        cx = root[std::to_string(i + 1)]["K"][0][2].asFloat() / 3840;
+        cy = root[std::to_string(i + 1)]["K"][1][2].asFloat() / 2160;
+        fx = root[std::to_string(i + 1)]["K"][0][0].asFloat() / 3840;
+        fy = root[std::to_string(i + 1)]["K"][1][1].asFloat() / 2160;
         K_invs[i] = glm::mat4(1);
         K_invs[i][0][0] = 1 / fx;
         K_invs[i][1][1] = 1 / fy;
@@ -331,8 +336,8 @@ void Renderer::loadForegroundTexture(void *rgb, void *depth, void *mask, int cam
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, depth_textures[cam_id]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F,
-                     width != -1 ? width : widths[cam_id],
-                     height != -1 ? height : heights[cam_id],
+                     width != -1 ? width : w_crop[cam_id],
+                     height != -1 ? height : h_crop[cam_id],
                      0, GL_RED, GL_FLOAT, depth);
 //        glGenerateMipmap(GL_TEXTURE_2D);
     }
@@ -340,8 +345,8 @@ void Renderer::loadForegroundTexture(void *rgb, void *depth, void *mask, int cam
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, mask_textures[cam_id]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-                     width != -1 ? width : widths[cam_id],
-                     height != -1 ? height : heights[cam_id],
+                     width != -1 ? width : w_crop[cam_id],
+                     height != -1 ? height : h_crop[cam_id],
                      0, GL_RED, GL_UNSIGNED_BYTE, mask);
 //        glGenerateMipmap(GL_TEXTURE_2D);
     }
@@ -417,6 +422,7 @@ void Renderer::setView(glm::mat4 projection, glm::mat4 view) {
     foregroundProgram->setMat4("model", glm::mat4(1.0f));
 
 }
+
 void Renderer::setModel(glm::mat4 model) {
     backgroundProgram->use();
     backgroundProgram->setMat4("model", (glm::transpose(model)));
@@ -479,19 +485,19 @@ void Renderer::renderForegroundMesh(GLuint show_type, int *cam_select) {
 
 void Renderer::renderForegroundFile(GLuint show_type, int *cam_select) {
     glm::vec3 centers[5] = {
-            {0.        ,  0.        ,  0.        },
-            {0.13442005, -0.00617611,  0.00693867},
-            {0.26451552, -0.01547954,  0.01613046},
-            {0.39635817, -0.01958267,  0.02322004},
-            {0.53632535, -0.02177305,  0.05059797}
+            {0.,         0.,          0.},
+            {0.13442005, -0.00617611, 0.00693867},
+            {0.26451552, -0.01547954, 0.01613046},
+            {0.39635817, -0.01958267, 0.02322004},
+            {0.53632535, -0.02177305, 0.05059797}
     };
 
     float centers_f[5][3] = {
-            {0.        ,  0.        ,  0.        },
-            {0.13442005, -0.00617611,  0.00693867},
-            {0.26451552, -0.01547954,  0.01613046},
-            {0.39635817, -0.01958267,  0.02322004},
-            {0.53632535, -0.02177305,  0.05059797}
+            {0.,         0.,          0.},
+            {0.13442005, -0.00617611, 0.00693867},
+            {0.26451552, -0.01547954, 0.01613046},
+            {0.39635817, -0.01958267, 0.02322004},
+            {0.53632535, -0.02177305, 0.05059797}
     };
 
     foregroundProgram->use();
@@ -522,6 +528,10 @@ void Renderer::renderForegroundFile(GLuint show_type, int *cam_select) {
         foregroundProgram->setMat4("R_inv", glm::transpose(R_invs[i]));
         foregroundProgram->setFloat("width", widths[i]);
         foregroundProgram->setFloat("height", heights[i]);
+        foregroundProgram->setFloat("w_crop", w_crop[i]);
+        foregroundProgram->setFloat("h_crop", h_crop[i]);
+        foregroundProgram->setFloat("x_crop", x_crop[i]);
+        foregroundProgram->setFloat("y_crop", y_crop[i]);
 
         glPolygonMode(GL_FRONT_AND_BACK, show_type);
 

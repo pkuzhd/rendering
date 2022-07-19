@@ -15,6 +15,7 @@ public:
     glm::mat4 *K_invs;
     glm::mat4 *R_invs;
     int *widths, *heights;
+    int *w_crop, *h_crop, *x_crop, *y_crop;
     int M, N;
 
     GLint FBO;
