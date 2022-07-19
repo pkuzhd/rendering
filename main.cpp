@@ -174,9 +174,9 @@ int main() {
     int num_thread = 32;
     ThreadPool threadPool(num_thread);
 
-    void *rgbs[100][5];
-    void *depths[100][5];
-    void *masks[100][5];
+//    void *rgbs[100][5];
+//    void *depths[100][5];
+//    void *masks[100][5];
 
     int framerate = 10;
     int begin = 101;
@@ -186,9 +186,12 @@ int main() {
 //    IRGBDReceiver *receiver = new RGBDReceiver();
 //    receiver->open("./pipe_dir/pipe2");
     IRGBDReceiver *receiver = new FileRGBDReceiver();
-    receiver->open("/data/GoPro/videos/teaRoom/sequence/1080p/");
     RGBDData *data = nullptr;
-    for (int j = 0; j < 5; ++j) {
+
+    auto t1 = chrono::high_resolution_clock::now();
+    receiver->open("/data/GoPro/videos/teaRoom/sequence/1080p/");
+    int num = 1;
+    for (int j = 0; j < num; ++j) {
         data = nullptr;
         while (!data) {
             data = receiver->getData();
@@ -200,18 +203,23 @@ int main() {
             renderer.h_crop[i] = data->h_crop[i];
             renderer.x_crop[i] = data->x[i];
             renderer.y_crop[i] = data->y[i];
-            rgbs[j][i] = data->getImage(i);
-            depths[j][i] = data->getDepth(i);
-            masks[j][i] = data->getMask(i);
         }
     }
-
+    auto t2 = chrono::high_resolution_clock::now();
+    int size;
+    size = receiver->getBufferSize();
+    cout << chrono::duration<double, milli>(t2 - t1).count() / 1000 << " "
+         << num / (chrono::duration<double, milli>(t2 - t1).count() / 1000)
+         << " buffer: " << size << endl;
 
     for (int i = 0; i < 5; ++i) {
-        renderer.loadForegroundTexture(rgbs[0][i], 0, 0, i);
-        renderer.loadForegroundTexture(0, depths[0][i], 0, i);
-        renderer.loadForegroundTexture(0, 0, masks[0][i], i);
+        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i);
+        renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
+        renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
     }
+
+    delete data;
+    data = nullptr;
 
     glm::mat4 model = {
             0.997040, -0.014666, -0.075476, 4.976910,
@@ -224,18 +232,30 @@ int main() {
 
     // render loop
     // -----------
+    float start_time = static_cast<float>(glfwGetTime());
+    int last_id = 0;
+    framerate = 25;
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
         // --------------------
-        static float start_time = 0.0f;
         static int start_frame_id = 0;
+        int next_frame = false;
 
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
         int frame_id = (currentFrame - start_time) * framerate;
-        cout << frame_id << " " << frame_id % num_frame << endl;
+        if (frame_id > last_id) {
+            last_id = frame_id;
+            next_frame = true;
+        }
+        int size;
+        size = receiver->getBufferSize();
+        cout << frame_id << " " << next_frame << " buffer: " << size << endl;
+        if (size < 100)
+            this_thread::sleep_for(chrono::milliseconds(500));
+
 
         frame_id = (frame_id + start_frame_id) % num_frame;
         static bool is_pause = false;
@@ -245,33 +265,50 @@ int main() {
                 is_pause = true;
                 start_frame_id = frame_id;
             }
-            if (keyleft) {
-                keyleft = false;
-                start_frame_id = (start_frame_id - 1 + num_frame) % num_frame;
-                for (int i = 0; i < 5; ++i) {
-                    if (!cam_select[i])
-                        continue;
-                    if (last_frame_id != start_frame_id) {
-                        renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
-                        renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i);
-                        renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
-                    }
-                }
-                last_frame_id = start_frame_id;
-            }
+//            if (keyleft) {
+//                keyleft = false;
+//                start_frame_id = (start_frame_id - 1 + num_frame) % num_frame;
+//                for (int i = 0; i < 5; ++i) {
+//                    if (!cam_select[i])
+//                        continue;
+//                    if (last_frame_id != start_frame_id) {
+//                        renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
+//                        renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i);
+//                        renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
+//                    }
+//                }
+//                last_frame_id = start_frame_id;
+//            }
             if (keyright) {
                 keyright = false;
-                start_frame_id = (start_frame_id + 1) % num_frame;
-                for (int i = 0; i < 5; ++i) {
-                    if (!cam_select[i])
-                        continue;
-                    if (last_frame_id != start_frame_id) {
-                        renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
-                        renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i);
-                        renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
-                    }
+//                start_frame_id = (start_frame_id + 1) % num_frame;
+                data = nullptr;
+                while (!data) {
+                    data = receiver->getData();
+                };
+                for (int i = 0; i < renderer.num_camera; ++i) {
+                    renderer.widths[i] = data->w[i];
+                    renderer.heights[i] = data->h[i];
+                    renderer.w_crop[i] = data->w_crop[i];
+                    renderer.h_crop[i] = data->h_crop[i];
+                    renderer.x_crop[i] = data->x[i];
+                    renderer.y_crop[i] = data->y[i];
                 }
-                last_frame_id = start_frame_id;
+                for (int i = 0; i < 5; ++i) {
+//                    if (!cam_select[i])
+//                        continue;
+//                    if (last_frame_id != start_frame_id) {
+//                        renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
+//                        renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i);
+//                        renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
+//                    }
+                    renderer.loadForegroundTexture(data->getImage(i), 0, 0, i);
+                    renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
+                    renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
+                }
+                delete data;
+                data = nullptr;
+//                last_frame_id = start_frame_id;
             }
         } else {
             keyleft = false;
@@ -280,16 +317,44 @@ int main() {
                 is_pause = false;
                 start_time = currentFrame;
             }
-            for (int i = 0; i < 5; ++i) {
-                if (!cam_select[i])
-                    continue;
-                if (last_frame_id != frame_id) {
-                    renderer.loadForegroundTexture(rgbs[frame_id][i], 0, 0, i);
-                    renderer.loadForegroundTexture(0, depths[frame_id][i], 0, i);
-                    renderer.loadForegroundTexture(0, 0, masks[frame_id][i], i);
+            if (next_frame) {
+                data = nullptr;
+                while (!data) {
+                    data = receiver->getData();
+                };
+                for (int i = 0; i < renderer.num_camera; ++i) {
+                    renderer.widths[i] = data->w[i];
+                    renderer.heights[i] = data->h[i];
+                    renderer.w_crop[i] = data->w_crop[i];
+                    renderer.h_crop[i] = data->h_crop[i];
+                    renderer.x_crop[i] = data->x[i];
+                    renderer.y_crop[i] = data->y[i];
                 }
+                for (int i = 0; i < 5; ++i) {
+//                    if (!cam_select[i])
+//                        continue;
+//                    if (last_frame_id != start_frame_id) {
+//                        renderer.loadForegroundTexture(rgbs[start_frame_id][i], 0, 0, i);
+//                        renderer.loadForegroundTexture(0, depths[start_frame_id][i], 0, i);
+//                        renderer.loadForegroundTexture(0, 0, masks[start_frame_id][i], i);
+//                    }
+                    renderer.loadForegroundTexture(data->getImage(i), 0, 0, i);
+                    renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
+                    renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
+                }
+                delete data;
+                data = nullptr;
+//            for (int i = 0; i < 5; ++i) {
+//                if (!cam_select[i])
+//                    continue;
+//                if (last_frame_id != frame_id) {
+//                    renderer.loadForegroundTexture(rgbs[frame_id][i], 0, 0, i);
+//                    renderer.loadForegroundTexture(0, depths[frame_id][i], 0, i);
+//                    renderer.loadForegroundTexture(0, 0, masks[frame_id][i], i);
+//                }
+//            }
+                last_frame_id = frame_id;
             }
-            last_frame_id = frame_id;
         }
 
 
