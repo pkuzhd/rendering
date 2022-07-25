@@ -3,7 +3,6 @@ project(rendering)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-include_directories(../pipe_transmission)
 
 set(CMAKE_CXX_STANDARD 14)
 find_package(glfw3)
@@ -17,6 +16,7 @@ set(OPENCV_COMPONENTS
         opencv_objdetect
         opencv_video)
 
+include_directories(../pipe_transmission)
 add_subdirectory(../pipe_transmission pipe_transmission)
 #add_library(TransLib ../pipe_transmission/utils/ImageSender.cpp ../pipe_transmission/utils/RGBDReceiver.cpp)
 

@@ -423,6 +423,13 @@ void Renderer::setView(glm::mat4 projection, glm::mat4 view) {
 
 }
 
+void Renderer::setDebug(int debug) {
+    backgroundProgram->use();
+    backgroundProgram->setInt("debug", debug);
+    foregroundProgram->use();
+    foregroundProgram->setInt("debug", debug);
+}
+
 void Renderer::setModel(glm::mat4 model) {
     backgroundProgram->use();
     backgroundProgram->setMat4("model", (glm::transpose(model)));

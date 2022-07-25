@@ -16,6 +16,8 @@ uniform mat4 R_inv;
 uniform vec3 centers[5];
 uniform vec3 center;
 uniform int idx;
+uniform int debug;
+uniform int imgcrop;
 
 uniform float width;
 uniform float height;
@@ -29,12 +31,15 @@ uniform sampler2D depth;
 void main()
 {
     float d = texture(depth, vec2(aPos.x, aPos.y)).r;
-//    if (d < 0.0)
-//    d = 100;
+    if (debug == 1) {
+        d = 1;
+    }
     TexCoord = vec2((aPos.x * w_crop + x_crop) / width, (aPos.y * h_crop + y_crop) / height);
     cropCoord = vec2(aPos.x, aPos.y);
+    if (imgcrop == 1) {
+        TexCoord = cropCoord;
+    }
     vec2 uv = vec2((aPos.x * w_crop + x_crop) / width, (aPos.y * h_crop + y_crop) / height);
-//    vec2 uv = vec2(aPos.x, aPos.y);
     vec4 Xc = K_inv * vec4(uv, 1.0f, 1.0f);
     vec4 Xw = R_inv * vec4(Xc.xyz * d, 1.0f);
 

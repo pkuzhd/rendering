@@ -86,6 +86,8 @@ public:
 
     void setView(glm::mat4 projection, glm::mat4 view);
 
+    void setDebug(int debug);
+
     void setModel(glm::mat4 model);
 
 };

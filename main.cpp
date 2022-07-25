@@ -72,7 +72,8 @@ GLuint show_type = GL_FILL;
 GLuint cursor_type = GLFW_CURSOR_NORMAL;
 
 bool pause = false;
-bool keyleft = false, keyright = false;
+bool keyright = false;
+int debug = 0;
 
 void key_callback(GLFWwindow *window, const int key, const int s, const int action, const int mods) {
     if (action == GLFW_RELEASE)
@@ -92,14 +93,12 @@ void key_callback(GLFWwindow *window, const int key, const int s, const int acti
             cursor_type = cursor_type == GLFW_CURSOR_DISABLED ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
         if (key == GLFW_KEY_SPACE)
             pause = !pause;
-        if (key == GLFW_KEY_LEFT)
-            keyleft = true;
         if (key == GLFW_KEY_RIGHT)
             keyright = true;
+        if (key == GLFW_KEY_P)
+            debug = (debug + 1) % 2;
     }
     if (action == GLFW_REPEAT) {
-        if (key == GLFW_KEY_LEFT)
-            keyleft = true;
         if (key == GLFW_KEY_RIGHT)
             keyright = true;
     }
@@ -174,15 +173,6 @@ int main() {
     int num_thread = 32;
     ThreadPool threadPool(num_thread);
 
-//    void *rgbs[100][5];
-//    void *depths[100][5];
-//    void *masks[100][5];
-
-    int framerate = 10;
-    int begin = 101;
-    int step = 50 / framerate;
-    int num_frame = 5;
-
 //    IRGBDReceiver *receiver = new RGBDReceiver();
 //    receiver->open("./pipe_dir/pipe2");
     IRGBDReceiver *receiver = new FileRGBDReceiver();
@@ -213,7 +203,7 @@ int main() {
          << " buffer: " << size << endl;
 
     for (int i = 0; i < 5; ++i) {
-        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i);
+        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.w_crop[i], renderer.h_crop[i]);
         renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
         renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
     }
@@ -229,32 +219,42 @@ int main() {
     };
     renderer.setModel(model);
 //    renderer.setModel(glm::mat4(1.0f));
-
+    renderer.foregroundProgram->use();
+    renderer.foregroundProgram->setInt("imgcrop", 1);
     // render loop
     // -----------
     float start_time = static_cast<float>(glfwGetTime());
     int last_id = 0;
-    framerate = 25;
+    int framerate = 25;
+    int frame_cnt = 0;
+    float last_time[5] = {start_time, start_time, start_time, start_time, start_time};
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
         // --------------------
         int next_frame = false;
 
-        float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
+        float current_time = static_cast<float>(glfwGetTime());
+        deltaTime = current_time - lastFrame;
+        lastFrame = current_time;
 
-        int frame_id = (currentFrame - start_time) * framerate;
+        int frame_id = (current_time - start_time) * framerate;
         if (frame_id > last_id) {
             last_id = frame_id;
             next_frame = true;
         }
         int size;
         size = receiver->getBufferSize();
-//        cout << frame_id << " " << next_frame << " buffer: " << size << endl;
-//        if (size < 100)
-//            this_thread::sleep_for(chrono::milliseconds(500));
+        cout << frame_id << " " << next_frame << " buffer: " << size << " "
+             << "avg: " << frame_cnt / (current_time - start_time) << " "
+             << "last 5: " << 5 / (current_time - last_time[0])
+             << endl;
+        ++frame_cnt;
 
+        last_time[0] = last_time[1];
+        last_time[1] = last_time[2];
+        last_time[2] = last_time[3];
+        last_time[3] = last_time[4];
+        last_time[4] = current_time;
 
         static bool is_pause = false;
         if (pause) {
@@ -276,7 +276,7 @@ int main() {
                     renderer.y_crop[i] = data->y[i];
                 }
                 for (int i = 0; i < 5; ++i) {
-                    renderer.loadForegroundTexture(data->getImage(i), 0, 0, i);
+                    renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.w_crop[i], renderer.h_crop[i]);
                     renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
                     renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
                 }
@@ -284,31 +284,29 @@ int main() {
                 data = nullptr;
             }
         } else {
-            keyleft = false;
             keyright = false;
             if (is_pause) {
                 is_pause = false;
             }
             if (next_frame) {
-                data = nullptr;
-                while (!data) {
-                    data = receiver->getData();
-                };
-                for (int i = 0; i < renderer.num_camera; ++i) {
-                    renderer.widths[i] = data->w[i];
-                    renderer.heights[i] = data->h[i];
-                    renderer.w_crop[i] = data->w_crop[i];
-                    renderer.h_crop[i] = data->h_crop[i];
-                    renderer.x_crop[i] = data->x[i];
-                    renderer.y_crop[i] = data->y[i];
+                data = receiver->getData();
+                if (data) {
+                    for (int i = 0; i < renderer.num_camera; ++i) {
+                        renderer.widths[i] = data->w[i];
+                        renderer.heights[i] = data->h[i];
+                        renderer.w_crop[i] = data->w_crop[i];
+                        renderer.h_crop[i] = data->h_crop[i];
+                        renderer.x_crop[i] = data->x[i];
+                        renderer.y_crop[i] = data->y[i];
+                    }
+                    for (int i = 0; i < 5; ++i) {
+                        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.w_crop[i], renderer.h_crop[i]);
+                        renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
+                        renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
+                    }
+                    delete data;
+                    data = nullptr;
                 }
-                for (int i = 0; i < 5; ++i) {
-                    renderer.loadForegroundTexture(data->getImage(i), 0, 0, i);
-                    renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
-                    renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
-                }
-                delete data;
-                data = nullptr;
             }
         }
 
@@ -326,8 +324,9 @@ int main() {
         glm::mat4 view = camera.GetViewMatrix();
 
         renderer.setView(projection, view);
+        renderer.setDebug(debug);
         renderer.clearBuffer();
-//        renderer.renderBackground(show_type);
+        renderer.renderBackground(show_type);
         renderer.renderForegroundFile(show_type, cam_select);
         renderer.renderBuffer();
 

@@ -7,6 +7,7 @@ in float weight;
 
 uniform float width;
 uniform float height;
+uniform int debug;
 
 // texture samplers
 uniform sampler2D rgb;
@@ -20,9 +21,11 @@ void main()
 
     float d = texture(depth, vec2(cropCoord.x, cropCoord.y)).r;
     float threshold = 1.0;
-    if (texture(mask, cropCoord).r < 0.8f)
-    discard;
-    if (d < 0.0f)
-    discard;
+    if (debug != 1) {
+        if (texture(mask, cropCoord).r < 0.8f)
+        discard;
+        if (d < 0.0f)
+        discard;
+    }
 }
 
