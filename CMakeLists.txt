@@ -27,6 +27,13 @@ add_executable(rendering
         utils/Renderer.cpp
         utils/ThreadPool.cpp utils/ThreadPool.h)
 
+add_executable(videoRendering
+        videoRendering.cpp
+        glad.c
+        ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
+        utils/Renderer.cpp
+        utils/ThreadPool.cpp utils/ThreadPool.h)
+
 add_executable(TestImage
         TestImage.cpp
         utils/ThreadPool.cpp utils/ThreadPool.h)
@@ -59,7 +66,15 @@ target_link_libraries(
         rendering
         glfw
         jsoncpp
-#        ${OPENCV_COMPONENTS}
+        #        ${OPENCV_COMPONENTS}
+        TransLib
+        pthread
+)
+target_link_libraries(
+        videoRendering
+        glfw
+        jsoncpp
+        #        ${OPENCV_COMPONENTS}
         TransLib
         pthread
 )
@@ -95,5 +110,5 @@ target_link_libraries(
         glfw
         jsoncpp
         ${OPENCV_COMPONENTS}
-#        ${OpenCV_LIBS}
+        #        ${OpenCV_LIBS}
 )
