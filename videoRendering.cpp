@@ -148,22 +148,19 @@ int main() {
         return -1;
     }
 
-    // configure global opengl state
-    // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
 
     GLint FBO;
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &FBO);
-//
+
     Renderer renderer(FBO);
     renderer.createProgram(Renderer::foreground, "./shaders/camera.vert", "./shaders/camera.frag");
     renderer.createProgram(Renderer::background, "./shaders/background.vert", "./shaders/background.frag");
     renderer.createProgram(Renderer::update, "./shaders/update.vert", "./shaders/update.frag");
     renderer.createProgram(Renderer::resolve, "./shaders/resolve.vert", "./shaders/resolve.frag");
     renderer.createFramebuffers(SCR_WIDTH, SCR_HEIGHT);
-//
-//    renderer.loadBackground("./data/scene_dense_mesh_refine_texture.ply", "./data/scene_dense_mesh_refine_texture.png");
+
     renderer.loadBackground("../data/scene_dense_mesh_refine_texture.ply",
                             "../data/scene_dense_mesh_refine_texture.png");
     renderer.loadForegroundFile("../data/para.json", M, N);
@@ -190,35 +187,26 @@ int main() {
 //    receiver->open("./pipe_dir/pipe2");
 //    IRGBDReceiver *receiver = new FileRGBDReceiver();
     RGBDData *data = nullptr;
-    RGBDData *all_data[500];
-    for (int i = 0; i < 500; ++i) {
-        all_data[i] = nullptr;
-    }
-
-    int num_frame = 90;
 
     auto t1 = chrono::high_resolution_clock::now();
 //    receiver->open("/data/GoPro/videos/teaRoom/sequence/1080p/");
-    int num = 1;
-    for (int j = 0; j < num; ++j) {
-        data = nullptr;
-        while (!data) {
-            data = receiver->getData();
-        };
-        for (int i = 0; i < renderer.num_camera; ++i) {
-            renderer.widths[i] = data->w[i];
-            renderer.heights[i] = data->h[i];
-            renderer.w_crop[i] = data->w_crop[i];
-            renderer.h_crop[i] = data->h_crop[i];
-            renderer.x_crop[i] = data->x[i];
-            renderer.y_crop[i] = data->y[i];
-        }
+    data = nullptr;
+    while (!data) {
+        data = receiver->getData();
+    };
+    for (int i = 0; i < renderer.num_camera; ++i) {
+        renderer.widths[i] = data->w[i];
+        renderer.heights[i] = data->h[i];
+        renderer.w_crop[i] = data->w_crop[i];
+        renderer.h_crop[i] = data->h_crop[i];
+        renderer.x_crop[i] = data->x[i];
+        renderer.y_crop[i] = data->y[i];
     }
     auto t2 = chrono::high_resolution_clock::now();
     int size;
     size = receiver->getBufferSize();
     cout << chrono::duration<double, milli>(t2 - t1).count() / 1000 << " "
-         << num / (chrono::duration<double, milli>(t2 - t1).count() / 1000)
+         << 1 / (chrono::duration<double, milli>(t2 - t1).count() / 1000)
          << " buffer: " << size << endl;
 
     for (int i = 0; i < 5; ++i) {
@@ -228,8 +216,6 @@ int main() {
         renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
         renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
     }
-//    while ((size = receiver->getBufferSize()) < 100);
-    all_data[0] = data;
 
     glm::mat4 model = {
             0.997040, -0.014666, -0.075476, 4.976910,
@@ -257,29 +243,6 @@ int main() {
         deltaTime = current_time - lastFrame;
         lastFrame = current_time;
 
-
-        auto func = [](float t, float period, glm::vec3 begin, glm::vec3 end) {
-            return 0.0f;
-        };
-
-//        glm::vec3 head = {0.266047, -0.0929538, 0.898909};
-//        glm::vec3 v = head - camera.Position;
-//
-//        float t_float = 0.5;
-//        int t = current_time;
-//        t = t / 4 * 4;
-//        float t2 = abs(current_time - t - 2) / 2;
-//        camera.Position = glm::vec3(0.53632535, -0.02177305, 0.05059797) * t2;
-//
-//        camera.Yaw = glm::degrees(atan(v.z / v.x));
-//        if (camera.Yaw > 0)
-//            camera.Yaw -= 180;
-//        camera.Pitch = -2;
-//        camera.updateCameraVectors();
-////        camera.Front = camera.Position - head;
-////        cout << t2 << " " << camera.Position[0] << " " << camera.Position[1] << " " << camera.Position[2] << endl;
-////        cout << t2 << " " << camera.Front[0] << " " << camera.Front[1] << " " << camera.Front[2] << endl;
-//        cout << t2 << " " << camera.Yaw << " " << camera.Pitch << endl;
         int frame_id = (current_time - start_time) * framerate;
         if (frame_id > last_id) {
             last_id = frame_id;
