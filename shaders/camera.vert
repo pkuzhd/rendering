@@ -43,8 +43,7 @@ void main()
     vec4 Xc = K_inv * vec4(uv, 1.0f, 1.0f);
     vec4 Xw = R_inv * vec4(Xc.xyz * d, 1.0f);
 
-    vec4 Xv = view * vec4(Xw.x, -Xw.y, -Xw.z, Xw.w);
-    vec3 OV = Xv.xyz;
+    vec3 OV = (view * vec4(Xw.x, Xw.y, Xw.z, 0.0f)).xyz;
     vec3 OC = (view * vec4(Xw.xyz - center, 0.0f)).xyz;
     float angle = degrees(acos(max(-1.0f, min(1.0f, dot(OV, OC) / length(OV) / length(OC)))));
     weight = 180 - angle;
@@ -59,6 +58,8 @@ void main()
     weight = 1 - angle / max_angle + 0.001;
 
     weight = 1;
-    gl_Position = projection * view * model * vec4(Xw.x, -Xw.y, -Xw.z, Xw.w);
+
+    vec4 Xv = view * model * vec4(Xw.x, Xw.y, Xw.z, Xw.w);
+    gl_Position = projection * vec4(Xv.x, -Xv.y, -Xv.z, Xv.w);
 }
 

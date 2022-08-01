@@ -58,6 +58,8 @@ float lastFrame = 0.0f;
 float w = 384.0f;
 float h = 640.0f;
 
+int imgcrop = 1;
+
 int pointSize = 1;
 int cam_select[5] = {1, 1, 1, 1, 1};
 glm::vec3 centers[5] = {
@@ -173,9 +175,11 @@ int main() {
     int num_thread = 32;
     ThreadPool threadPool(num_thread);
 
-//    IRGBDReceiver *receiver = new RGBDReceiver();
-//    receiver->open("./pipe_dir/pipe2");
-    IRGBDReceiver *receiver = new FileRGBDReceiver();
+    IRGBDReceiver *receiver = new RGBDReceiver();
+    receiver->open("../pipe_transmission/pipe_dir/pipe2");
+    imgcrop = 0;
+//    IRGBDReceiver *receiver = new FileRGBDReceiver();
+//    imgcrop = 1;
     RGBDData *data = nullptr;
 
     auto t1 = chrono::high_resolution_clock::now();
@@ -203,7 +207,7 @@ int main() {
          << " buffer: " << size << endl;
 
     for (int i = 0; i < 5; ++i) {
-        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.w_crop[i], renderer.h_crop[i]);
+        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.widths[i], renderer.heights[i]);
         renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
         renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
     }
@@ -220,7 +224,7 @@ int main() {
     renderer.setModel(model);
 //    renderer.setModel(glm::mat4(1.0f));
     renderer.foregroundProgram->use();
-    renderer.foregroundProgram->setInt("imgcrop", 1);
+    renderer.foregroundProgram->setInt("imgcrop", imgcrop);
     // render loop
     // -----------
     float start_time = static_cast<float>(glfwGetTime());
@@ -276,7 +280,7 @@ int main() {
                     renderer.y_crop[i] = data->y[i];
                 }
                 for (int i = 0; i < 5; ++i) {
-                    renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.w_crop[i], renderer.h_crop[i]);
+                    renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.widths[i], renderer.heights[i]);
                     renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
                     renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
                 }
@@ -300,7 +304,8 @@ int main() {
                         renderer.y_crop[i] = data->y[i];
                     }
                     for (int i = 0; i < 5; ++i) {
-                        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.w_crop[i], renderer.h_crop[i]);
+                        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.widths[i],
+                                                       renderer.heights[i]);
                         renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
                         renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
                     }

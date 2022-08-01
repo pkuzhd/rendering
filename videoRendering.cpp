@@ -64,6 +64,7 @@ float lastFrame = 0.0f;
 
 float w = 384.0f;
 float h = 640.0f;
+int imgcrop = 1;
 
 int pointSize = 1;
 int cam_select[5] = {1, 1, 1, 1, 1};
@@ -180,13 +181,24 @@ int main() {
     int num_thread = 32;
     ThreadPool threadPool(num_thread);
 
+    IRGBDReceiver *receiver = new RGBDReceiver();
+    receiver->open("../pipe_transmission/pipe_dir/pipe2");
+    imgcrop = 0;
+//    IRGBDReceiver *receiver = new FileRGBDReceiver();
+//    imgcrop = 1;
 //    IRGBDReceiver *receiver = new RGBDReceiver();
 //    receiver->open("./pipe_dir/pipe2");
-    IRGBDReceiver *receiver = new FileRGBDReceiver();
+//    IRGBDReceiver *receiver = new FileRGBDReceiver();
     RGBDData *data = nullptr;
+    RGBDData *all_data[500];
+    for (int i = 0; i < 500; ++i) {
+        all_data[i] = nullptr;
+    }
+
+    int num_frame = 90;
 
     auto t1 = chrono::high_resolution_clock::now();
-    receiver->open("/data/GoPro/videos/teaRoom/sequence/1080p/");
+//    receiver->open("/data/GoPro/videos/teaRoom/sequence/1080p/");
     int num = 1;
     for (int j = 0; j < num; ++j) {
         data = nullptr;
@@ -210,14 +222,14 @@ int main() {
          << " buffer: " << size << endl;
 
     for (int i = 0; i < 5; ++i) {
-        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.w_crop[i], renderer.h_crop[i]);
+        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i,
+                                       imgcrop ? renderer.w_crop[i] : renderer.widths[i],
+                                       imgcrop ? renderer.h_crop[i] : renderer.heights[i]);
         renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
         renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
     }
-    while ((size = receiver->getBufferSize()) < 100);
-
-    delete data;
-    data = nullptr;
+//    while ((size = receiver->getBufferSize()) < 100);
+    all_data[0] = data;
 
     glm::mat4 model = {
             0.997040, -0.014666, -0.075476, 4.976910,
@@ -228,7 +240,7 @@ int main() {
     renderer.setModel(model);
 //    renderer.setModel(glm::mat4(1.0f));
     renderer.foregroundProgram->use();
-    renderer.foregroundProgram->setInt("imgcrop", 1);
+    renderer.foregroundProgram->setInt("imgcrop", imgcrop);
     // render loop
     // -----------
     float start_time = static_cast<float>(glfwGetTime());
@@ -245,6 +257,29 @@ int main() {
         deltaTime = current_time - lastFrame;
         lastFrame = current_time;
 
+
+        auto func = [](float t, float period, glm::vec3 begin, glm::vec3 end) {
+            return 0.0f;
+        };
+
+//        glm::vec3 head = {0.266047, -0.0929538, 0.898909};
+//        glm::vec3 v = head - camera.Position;
+//
+//        float t_float = 0.5;
+//        int t = current_time;
+//        t = t / 4 * 4;
+//        float t2 = abs(current_time - t - 2) / 2;
+//        camera.Position = glm::vec3(0.53632535, -0.02177305, 0.05059797) * t2;
+//
+//        camera.Yaw = glm::degrees(atan(v.z / v.x));
+//        if (camera.Yaw > 0)
+//            camera.Yaw -= 180;
+//        camera.Pitch = -2;
+//        camera.updateCameraVectors();
+////        camera.Front = camera.Position - head;
+////        cout << t2 << " " << camera.Position[0] << " " << camera.Position[1] << " " << camera.Position[2] << endl;
+////        cout << t2 << " " << camera.Front[0] << " " << camera.Front[1] << " " << camera.Front[2] << endl;
+//        cout << t2 << " " << camera.Yaw << " " << camera.Pitch << endl;
         int frame_id = (current_time - start_time) * framerate;
         if (frame_id > last_id) {
             last_id = frame_id;
@@ -252,10 +287,10 @@ int main() {
         }
         int size;
         size = receiver->getBufferSize();
-        cout << frame_id << " " << next_frame << " buffer: " << size << " "
-             << "avg: " << frame_cnt / (current_time - start_time) << " "
-             << "last 5: " << 5 / (current_time - last_time[0])
-             << endl;
+//        cout << frame_id << " " << next_frame << " buffer: " << size << " "
+//             << "avg: " << frame_cnt / (current_time - start_time) << " "
+//             << "last 5: " << 5 / (current_time - last_time[0])
+//             << endl;
         ++frame_cnt;
 
         last_time[0] = last_time[1];
@@ -264,17 +299,12 @@ int main() {
         last_time[3] = last_time[4];
         last_time[4] = current_time;
 
-        static bool is_pause = false;
-        if (pause) {
-            if (!is_pause) {
-                is_pause = true;
-            }
-            if (keyright) {
-                keyright = false;
-                data = nullptr;
-                while (!data) {
-                    data = receiver->getData();
-                };
+
+        if (1) {
+            data = receiver->getData();
+            while (!data)
+                data = receiver->getData();
+            if (data) {
                 for (int i = 0; i < renderer.num_camera; ++i) {
                     renderer.widths[i] = data->w[i];
                     renderer.heights[i] = data->h[i];
@@ -284,41 +314,34 @@ int main() {
                     renderer.y_crop[i] = data->y[i];
                 }
                 for (int i = 0; i < 5; ++i) {
-                    renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.w_crop[i], renderer.h_crop[i]);
+                    renderer.loadForegroundTexture(data->getImage(i), 0, 0, i,
+                                                   imgcrop ? renderer.w_crop[i] : renderer.widths[i],
+                                                   imgcrop ? renderer.h_crop[i] : renderer.heights[i]);
                     renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
                     renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
                 }
                 delete data;
                 data = nullptr;
             }
-        } else {
-            keyright = false;
-            if (is_pause) {
-                is_pause = false;
-            }
-            if (next_frame) {
-                data = receiver->getData();
-                if (data) {
-                    for (int i = 0; i < renderer.num_camera; ++i) {
-                        renderer.widths[i] = data->w[i];
-                        renderer.heights[i] = data->h[i];
-                        renderer.w_crop[i] = data->w_crop[i];
-                        renderer.h_crop[i] = data->h_crop[i];
-                        renderer.x_crop[i] = data->x[i];
-                        renderer.y_crop[i] = data->y[i];
-                    }
-                    for (int i = 0; i < 5; ++i) {
-                        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.w_crop[i],
-                                                       renderer.h_crop[i]);
-                        renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
-                        renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
-                    }
-                    delete data;
-                    data = nullptr;
-                }
-            }
         }
 
+        glm::vec3 head = {0.266047, -0.0929538, 0.898909};
+        glm::vec3 v = head - camera.Position;
+
+        float t_float = 0.5;
+        int t = frame_cnt % 200;
+        float t2 = abs(t - 100.0) / 100.0;
+        camera.Position = glm::vec3(0.53632535, -0.02177305, 0.05059797) * t2;
+
+        camera.Yaw = glm::degrees(atan(v.z / v.x));
+        if (camera.Yaw > 0)
+            camera.Yaw -= 180;
+        camera.Pitch = -2;
+        camera.updateCameraVectors();
+//        camera.Front = camera.Position - head;
+//        cout << t2 << " " << camera.Position[0] << " " << camera.Position[1] << " " << camera.Position[2] << endl;
+//        cout << t2 << " " << camera.Front[0] << " " << camera.Front[1] << " " << camera.Front[2] << endl;
+        cout << t2 << " " << camera.Yaw << " " << camera.Pitch << endl;
 
         // input
         // -----
@@ -339,18 +362,21 @@ int main() {
         renderer.renderForegroundFile(show_type, cam_select);
         renderer.renderBuffer();
 
-//        if (frame_id < 100) {
-//            char *screen = new char[SCR_HEIGHT * SCR_WIDTH * 3];
-//            memset(screen, 0, SCR_WIDTH * SCR_HEIGHT * 3);
-//            glReadPixels(0, 0, SCR_WIDTH, SCR_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, screen);
-//            cv::Mat img(SCR_HEIGHT, SCR_WIDTH, CV_8UC3, screen);
-//            cv::Mat img_out;
-//            cv::Mat img_out2;
-//            cv::cvtColor(img, img_out, cv::COLOR_BGR2RGB);
-//            cv::flip(img_out, img_out2, 0);
-//            cv::imwrite("./test_dir/" + to_string(frame_id) + ".png", img_out2);
-//            delete[] screen;
-//        }
+
+        if (frame_cnt < 250) {
+            char *screen = new char[SCR_HEIGHT * SCR_WIDTH * 3];
+            memset(screen, 0, SCR_WIDTH * SCR_HEIGHT * 3);
+            glReadPixels(0, 0, SCR_WIDTH, SCR_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, screen);
+            cv::Mat img(SCR_HEIGHT, SCR_WIDTH, CV_8UC3, screen);
+            cv::Mat img_out;
+            cv::Mat img_out2;
+            cv::cvtColor(img, img_out, cv::COLOR_BGR2RGB);
+            cv::flip(img_out, img_out2, 0);
+            cv::imwrite("./test_dir/test/" + to_string(frame_cnt) + ".png", img_out2);
+            delete[] screen;
+        } else {
+            return 0;
+        }
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -372,9 +398,9 @@ void processInput(GLFWwindow *window) {
 
     float speed = 0.5f;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime * speed);
+        camera.ProcessKeyboard(FORWARD, -deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime * speed);
+        camera.ProcessKeyboard(BACKWARD, -deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         camera.ProcessKeyboard(LEFT, deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
@@ -429,7 +455,7 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
     lastX = xpos;
     lastY = ypos;
 
-    camera.ProcessMouseMovement(xoffset * 0.2f, yoffset * 0.2f);
+    camera.ProcessMouseMovement(-xoffset * 0.2f, yoffset * 0.2f);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
