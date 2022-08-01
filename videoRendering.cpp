@@ -164,9 +164,9 @@ int main() {
     renderer.createFramebuffers(SCR_WIDTH, SCR_HEIGHT);
 //
 //    renderer.loadBackground("./data/scene_dense_mesh_refine_texture.ply", "./data/scene_dense_mesh_refine_texture.png");
-    renderer.loadBackground("/data/colmapTest/backgroundPly/bc5/scene_dense_mesh_refine_texture.ply",
-                            "/data/colmapTest/backgroundPly/bc5/scene_dense_mesh_refine_texture.png");
-    renderer.loadForegroundFile("./data/para.json", M, N);
+    renderer.loadBackground("../data/scene_dense_mesh_refine_texture.ply",
+                            "../data/scene_dense_mesh_refine_texture.png");
+    renderer.loadForegroundFile("../data/para.json", M, N);
 
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
