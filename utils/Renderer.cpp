@@ -117,7 +117,7 @@ void Renderer::createFramebuffers(int width, int height) {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, accumulateTexture, 0);
 }
 
-void Renderer::loadBackground(string back_file, string texture_file) {
+void Renderer::loadBackground(string mesh_file, string texture_file) {
     int faceIndexSize = 0;
 
     double *vertexArrayPLY, *coordArrayPLY;
@@ -128,7 +128,7 @@ void Renderer::loadBackground(string back_file, string texture_file) {
     int vertexPropertySize = 3;
     int faceIndexPropertySize = 3;
     int faceCoordPorpertySize = 6;
-    PlyReader *reader = initialReader(back_file);
+    PlyReader *reader = initialReader(mesh_file);
     double *tmp = initialDoubleArray(reader, elementVertex, vertexPropertySize, &vertexSize);
     long *indexArray = initialLongArray(reader, elementFace, faceIndexPropertySize, &faceIndexSize);
     coordArrayPLY = initialDoubleArray(reader, elementFace, faceCoordPorpertySize, &faceCoordSize);

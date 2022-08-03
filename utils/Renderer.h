@@ -64,7 +64,7 @@ public:
 
     void createFramebuffers(int width, int height);
 
-    void loadBackground(std::string back_file, std::string texture_file);
+    void loadBackground(std::string mesh_file, std::string texture_file);
 
     void loadForegroundMesh(std::string mesh_file);
 
