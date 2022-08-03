@@ -305,23 +305,20 @@ int main(int argc, char **argv) {
             }
         }
 
-        glm::vec3 head = {0.266047, -0.0929538, 0.898909};
-        glm::vec3 v = head - camera.Position;
-
         float t_float = 0.5;
         int t = frame_cnt % 200;
         float t2 = abs(t - 100.0) / 100.0;
+
         camera.Position = glm::vec3(0.53632535, -0.02177305, 0.05059797) * t2;
+        glm::vec3 head = {0.266047, -0.0929538, 0.898909};
+        glm::vec3 v = head - camera.Position;
 
         camera.Yaw = glm::degrees(atan(v.z / v.x));
         if (camera.Yaw > 0)
             camera.Yaw -= 180;
         camera.Pitch = -2;
         camera.updateCameraVectors();
-//        camera.Front = camera.Position - head;
-//        cout << t2 << " " << camera.Position[0] << " " << camera.Position[1] << " " << camera.Position[2] << endl;
-//        cout << t2 << " " << camera.Front[0] << " " << camera.Front[1] << " " << camera.Front[2] << endl;
-        cout << t2 << " " << camera.Yaw << " " << camera.Pitch << endl;
+        cout << t2 << " " << t << " " << camera.Yaw << " " << camera.Pitch << endl;
 
         // input
         // -----
