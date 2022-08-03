@@ -1,0 +1,6 @@
+--f=<file, pipe>
+--input=<input name>
+--output=<output name>
+--cam=<camera parameter>
+--mesh=<mesh file>
+--texture=<texture file>

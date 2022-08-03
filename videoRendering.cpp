@@ -115,7 +115,8 @@ void key_callback(GLFWwindow *window, const int key, const int s, const int acti
 }
 
 DEFINE_string(f, "pipe", "input format");
-DEFINE_string(i, "", "input name");
+DEFINE_string(input, "", "input name");
+DEFINE_string(output, "", "output name");
 DEFINE_string(cam, "", "camera parameter (json)");
 DEFINE_string(mesh, "", "mesh filename (ply)");
 DEFINE_string(texture, "", "texture filename (png,jpg,...)");
@@ -204,7 +205,7 @@ int main(int argc, char **argv) {
         receiver = new FileRGBDReceiver();
         imgcrop = 1;
     }
-    receiver->open(fLS::FLAGS_i);
+    receiver->open(fLS::FLAGS_input);
     RGBDData *data = nullptr;
 
     auto t1 = chrono::high_resolution_clock::now();
@@ -354,7 +355,7 @@ int main(int argc, char **argv) {
             cv::Mat img_out2;
             cv::cvtColor(img, img_out, cv::COLOR_BGR2RGB);
             cv::flip(img_out, img_out2, 0);
-            cv::imwrite("./test_dir/test/" + to_string(frame_cnt) + ".png", img_out2);
+            cv::imwrite(fLS::FLAGS_output + to_string(frame_cnt) + ".png", img_out2);
             delete[] screen;
         } else {
             return 0;
