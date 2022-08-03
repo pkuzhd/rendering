@@ -256,7 +256,6 @@ int main(int argc, char **argv) {
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
         // --------------------
-        int next_frame = false;
 
         float current_time = static_cast<float>(glfwGetTime());
         deltaTime = current_time - lastFrame;
@@ -265,14 +264,9 @@ int main(int argc, char **argv) {
         int frame_id = (current_time - start_time) * framerate;
         if (frame_id > last_id) {
             last_id = frame_id;
-            next_frame = true;
         }
         int size;
         size = receiver->getBufferSize();
-//        cout << frame_id << " " << next_frame << " buffer: " << size << " "
-//             << "avg: " << frame_cnt / (current_time - start_time) << " "
-//             << "last 5: " << 5 / (current_time - last_time[0])
-//             << endl;
         ++frame_cnt;
 
         last_time[0] = last_time[1];
