@@ -31,6 +31,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgcodecs.hpp>
 
+#include <gflags/gflags.h>
+
 using std::cout;
 using std::endl;
 using std::string;
@@ -112,7 +114,22 @@ void key_callback(GLFWwindow *window, const int key, const int s, const int acti
     }
 }
 
-int main() {
+DEFINE_string(f, "pipe", "input format");
+DEFINE_string(i, "", "input name");
+
+static bool validate_f(const char *flag, const string &value) {
+    if (value != "file" && value != "pipe") {
+        cout << "invalid value for " << flag << ": " << value << endl;
+        return false;
+    }
+    return true;
+}
+
+static const bool f_error = gflags::RegisterFlagValidator(&fLS::FLAGS_f, validate_f);
+
+int main(int argc, char **argv) {
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
+
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -178,18 +195,18 @@ int main() {
     int num_thread = 32;
     ThreadPool threadPool(num_thread);
 
-    IRGBDReceiver *receiver = new RGBDReceiver();
-    receiver->open("../pipe_transmission/pipe_dir/pipe2");
-    imgcrop = 0;
-//    IRGBDReceiver *receiver = new FileRGBDReceiver();
-//    imgcrop = 1;
-//    IRGBDReceiver *receiver = new RGBDReceiver();
-//    receiver->open("./pipe_dir/pipe2");
-//    IRGBDReceiver *receiver = new FileRGBDReceiver();
+    IRGBDReceiver *receiver;
+    if (fLS::FLAGS_f == "pipe") {
+        receiver = new RGBDReceiver();
+        imgcrop = 0;
+    } else {
+        receiver = new FileRGBDReceiver();
+        imgcrop = 1;
+    }
+    receiver->open(fLS::FLAGS_i);
     RGBDData *data = nullptr;
 
     auto t1 = chrono::high_resolution_clock::now();
-//    receiver->open("/data/GoPro/videos/teaRoom/sequence/1080p/");
     data = nullptr;
     while (!data) {
         data = receiver->getData();

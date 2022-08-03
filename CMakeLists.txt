@@ -3,8 +3,9 @@ project(rendering)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-
 set(CMAKE_CXX_STANDARD 14)
+
+find_package(gflags)
 find_package(glfw3)
 find_package(jsoncpp)
 find_package(OpenCV)
@@ -73,8 +74,9 @@ target_link_libraries(
 target_link_libraries(
         videoRendering
         glfw
+        gflags
         jsoncpp
-        #        ${OPENCV_COMPONENTS}
+        ${OPENCV_COMPONENTS}
         TransLib
         pthread
 )
