@@ -116,6 +116,9 @@ void key_callback(GLFWwindow *window, const int key, const int s, const int acti
 
 DEFINE_string(f, "pipe", "input format");
 DEFINE_string(i, "", "input name");
+DEFINE_string(cam, "", "camera parameter (json)");
+DEFINE_string(mesh, "", "mesh filename (ply)");
+DEFINE_string(texture, "", "texture filename (png,jpg,...)");
 
 static bool validate_f(const char *flag, const string &value) {
     if (value != "file" && value != "pipe") {
@@ -167,7 +170,6 @@ int main(int argc, char **argv) {
 
     glEnable(GL_DEPTH_TEST);
 
-
     GLint FBO;
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &FBO);
 
@@ -178,9 +180,8 @@ int main(int argc, char **argv) {
     renderer.createProgram(Renderer::resolve, "./shaders/resolve.vert", "./shaders/resolve.frag");
     renderer.createFramebuffers(SCR_WIDTH, SCR_HEIGHT);
 
-    renderer.loadBackground("../data/scene_dense_mesh_refine_texture.ply",
-                            "../data/scene_dense_mesh_refine_texture.png");
-    renderer.loadForegroundFile("../data/para.json", M, N);
+    renderer.loadBackground(fLS::FLAGS_mesh, fLS::FLAGS_texture);
+    renderer.loadForegroundFile(fLS::FLAGS_cam, M, N);
 
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
@@ -339,6 +340,10 @@ int main(int argc, char **argv) {
         renderer.renderForegroundFile(show_type, cam_select);
         renderer.renderBuffer();
 
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        // -------------------------------------------------------------------------------
+        glfwSwapBuffers(window);
+        glfwPollEvents();
 
         if (frame_cnt < 250) {
             char *screen = new char[SCR_HEIGHT * SCR_WIDTH * 3];
@@ -354,11 +359,6 @@ int main(int argc, char **argv) {
         } else {
             return 0;
         }
-
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
-        glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
