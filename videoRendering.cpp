@@ -31,7 +31,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgcodecs.hpp>
 
-#include <gflags/gflags.h>
+#include "flags.h"
 
 using std::cout;
 using std::endl;
@@ -113,23 +113,6 @@ void key_callback(GLFWwindow *window, const int key, const int s, const int acti
             keyright = true;
     }
 }
-
-DEFINE_string(f, "pipe", "input format");
-DEFINE_string(input, "", "input name");
-DEFINE_string(output, "", "output name");
-DEFINE_string(cam, "", "camera parameter (json)");
-DEFINE_string(mesh, "", "mesh filename (ply)");
-DEFINE_string(texture, "", "texture filename (png,jpg,...)");
-
-static bool validate_f(const char *flag, const string &value) {
-    if (value != "file" && value != "pipe") {
-        cout << "invalid value for " << flag << ": " << value << endl;
-        return false;
-    }
-    return true;
-}
-
-static const bool f_error = gflags::RegisterFlagValidator(&fLS::FLAGS_f, validate_f);
 
 int main(int argc, char **argv) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
