@@ -5,6 +5,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_CXX_STANDARD 14)
 
+find_package(assimp)
 find_package(gflags)
 find_package(glfw3)
 find_package(jsoncpp)
@@ -23,6 +24,13 @@ add_subdirectory(../pipe_transmission pipe_transmission)
 
 add_executable(rendering
         main.cpp
+        glad.c
+        ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
+        utils/Renderer.cpp
+        utils/ThreadPool.cpp utils/ThreadPool.h)
+
+add_executable(model
+        model.cpp
         glad.c
         ply/PlyReader.cpp ply/system.cpp ply/plyUtils.cpp
         utils/Renderer.cpp
@@ -70,6 +78,15 @@ target_link_libraries(
         #        ${OPENCV_COMPONENTS}
         TransLib
         pthread
+)
+target_link_libraries(
+        model
+        glfw
+        jsoncpp
+        #        ${OPENCV_COMPONENTS}
+        TransLib
+        pthread
+        assimp
 )
 target_link_libraries(
         videoRendering
