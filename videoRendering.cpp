@@ -219,6 +219,9 @@ int main(int argc, char **argv) {
         renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
     }
 
+    delete data;
+    data = nullptr;
+
     glm::mat4 model = {
             0.997040, -0.014666, -0.075476, 4.976910,
             -0.015422, -0.999836, -0.009449, -0.337819,
@@ -404,13 +407,13 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
         firstMouse = false;
     }
 
-    float xoffset = xpos - lastX;
+    float xoffset = lastX - xpos;
     float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
 
     lastX = xpos;
     lastY = ypos;
 
-    camera.ProcessMouseMovement(-xoffset * 0.2f, yoffset * 0.2f);
+    camera.ProcessMouseMovement(xoffset * 0.2f, yoffset * 0.2f);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called

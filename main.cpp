@@ -23,6 +23,7 @@
 #include "utils/RGBDReceiver.h"
 #include "utils/FileRGBDReceiver.h"
 
+#include "flags.h"
 
 using std::cout;
 using std::endl;
@@ -106,7 +107,9 @@ void key_callback(GLFWwindow *window, const int key, const int s, const int acti
     }
 }
 
-int main() {
+int main(int argc, char **argv) {
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
+
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -146,21 +149,18 @@ int main() {
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-
     GLint FBO;
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &FBO);
-//
+
     Renderer renderer(FBO);
     renderer.createProgram(Renderer::foreground, "./shaders/camera.vert", "./shaders/camera.frag");
     renderer.createProgram(Renderer::background, "./shaders/background.vert", "./shaders/background.frag");
     renderer.createProgram(Renderer::update, "./shaders/update.vert", "./shaders/update.frag");
     renderer.createProgram(Renderer::resolve, "./shaders/resolve.vert", "./shaders/resolve.frag");
     renderer.createFramebuffers(SCR_WIDTH, SCR_HEIGHT);
-//
-//    renderer.loadBackground("./data/scene_dense_mesh_refine_texture.ply", "./data/scene_dense_mesh_refine_texture.png");
-    renderer.loadBackground("/data/colmapTest/backgroundPly/bc5/scene_dense_mesh_refine_texture.ply",
-                            "/data/colmapTest/backgroundPly/bc5/scene_dense_mesh_refine_texture.png");
-    renderer.loadForegroundFile("./data/para.json", M, N);
+
+    renderer.loadBackground(fLS::FLAGS_mesh, fLS::FLAGS_texture);
+    renderer.loadForegroundFile(fLS::FLAGS_cam, M, N);
 
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
@@ -175,39 +175,41 @@ int main() {
     int num_thread = 32;
     ThreadPool threadPool(num_thread);
 
-    IRGBDReceiver *receiver = new RGBDReceiver();
-    receiver->open("../pipe_transmission/pipe_dir/pipe2");
-    imgcrop = 0;
-//    IRGBDReceiver *receiver = new FileRGBDReceiver();
-//    imgcrop = 1;
+    IRGBDReceiver *receiver;
+    if (fLS::FLAGS_f == "pipe") {
+        receiver = new RGBDReceiver();
+        imgcrop = 0;
+    } else {
+        receiver = new FileRGBDReceiver();
+        imgcrop = 1;
+    }
+    receiver->open(fLS::FLAGS_input);
     RGBDData *data = nullptr;
 
     auto t1 = chrono::high_resolution_clock::now();
-    receiver->open("/data/GoPro/videos/teaRoom/sequence/1080p/");
-    int num = 1;
-    for (int j = 0; j < num; ++j) {
-        data = nullptr;
-        while (!data) {
-            data = receiver->getData();
-        };
-        for (int i = 0; i < renderer.num_camera; ++i) {
-            renderer.widths[i] = data->w[i];
-            renderer.heights[i] = data->h[i];
-            renderer.w_crop[i] = data->w_crop[i];
-            renderer.h_crop[i] = data->h_crop[i];
-            renderer.x_crop[i] = data->x[i];
-            renderer.y_crop[i] = data->y[i];
-        }
+    data = nullptr;
+    while (!data) {
+        data = receiver->getData();
+    };
+    for (int i = 0; i < renderer.num_camera; ++i) {
+        renderer.widths[i] = data->w[i];
+        renderer.heights[i] = data->h[i];
+        renderer.w_crop[i] = data->w_crop[i];
+        renderer.h_crop[i] = data->h_crop[i];
+        renderer.x_crop[i] = data->x[i];
+        renderer.y_crop[i] = data->y[i];
     }
     auto t2 = chrono::high_resolution_clock::now();
     int size;
     size = receiver->getBufferSize();
     cout << chrono::duration<double, milli>(t2 - t1).count() / 1000 << " "
-         << num / (chrono::duration<double, milli>(t2 - t1).count() / 1000)
+         << 1 / (chrono::duration<double, milli>(t2 - t1).count() / 1000)
          << " buffer: " << size << endl;
 
     for (int i = 0; i < 5; ++i) {
-        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.widths[i], renderer.heights[i]);
+        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i,
+                                       imgcrop ? renderer.w_crop[i] : renderer.widths[i],
+                                       imgcrop ? renderer.h_crop[i] : renderer.heights[i]);
         renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
         renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
     }
@@ -267,25 +269,26 @@ int main() {
             }
             if (keyright) {
                 keyright = false;
-                data = nullptr;
-                while (!data) {
-                    data = receiver->getData();
-                };
-                for (int i = 0; i < renderer.num_camera; ++i) {
-                    renderer.widths[i] = data->w[i];
-                    renderer.heights[i] = data->h[i];
-                    renderer.w_crop[i] = data->w_crop[i];
-                    renderer.h_crop[i] = data->h_crop[i];
-                    renderer.x_crop[i] = data->x[i];
-                    renderer.y_crop[i] = data->y[i];
+                data = receiver->getData();
+                if (data) {
+                    for (int i = 0; i < renderer.num_camera; ++i) {
+                        renderer.widths[i] = data->w[i];
+                        renderer.heights[i] = data->h[i];
+                        renderer.w_crop[i] = data->w_crop[i];
+                        renderer.h_crop[i] = data->h_crop[i];
+                        renderer.x_crop[i] = data->x[i];
+                        renderer.y_crop[i] = data->y[i];
+                    }
+                    for (int i = 0; i < 5; ++i) {
+                        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i,
+                                                       imgcrop ? renderer.w_crop[i] : renderer.widths[i],
+                                                       imgcrop ? renderer.h_crop[i] : renderer.heights[i]);
+                        renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
+                        renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
+                    }
+                    delete data;
+                    data = nullptr;
                 }
-                for (int i = 0; i < 5; ++i) {
-                    renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.widths[i], renderer.heights[i]);
-                    renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
-                    renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
-                }
-                delete data;
-                data = nullptr;
             }
         } else {
             keyright = false;
@@ -304,8 +307,9 @@ int main() {
                         renderer.y_crop[i] = data->y[i];
                     }
                     for (int i = 0; i < 5; ++i) {
-                        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i, renderer.widths[i],
-                                                       renderer.heights[i]);
+                        renderer.loadForegroundTexture(data->getImage(i), 0, 0, i,
+                                                       imgcrop ? renderer.w_crop[i] : renderer.widths[i],
+                                                       imgcrop ? renderer.h_crop[i] : renderer.heights[i]);
                         renderer.loadForegroundTexture(0, data->getDepth(i), 0, i);
                         renderer.loadForegroundTexture(0, 0, data->getMask(i), i);
                     }
@@ -355,9 +359,9 @@ void processInput(GLFWwindow *window) {
 
     float speed = 0.5f;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime * speed);
+        camera.ProcessKeyboard(FORWARD, -deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime * speed);
+        camera.ProcessKeyboard(BACKWARD, -deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         camera.ProcessKeyboard(LEFT, deltaTime * speed);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
@@ -406,7 +410,7 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
         firstMouse = false;
     }
 
-    float xoffset = xpos - lastX;
+    float xoffset = lastX - xpos;
     float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
 
     lastX = xpos;

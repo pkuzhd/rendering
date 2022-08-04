@@ -74,6 +74,7 @@ add_executable(plyreader plyreader.cpp ply/PlyReader.cpp ply/system.cpp ply/plyU
 target_link_libraries(
         rendering
         glfw
+        gflags
         jsoncpp
         #        ${OPENCV_COMPONENTS}
         TransLib
